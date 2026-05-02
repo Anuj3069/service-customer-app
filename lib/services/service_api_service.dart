@@ -3,6 +3,19 @@ import '../models/service.dart';
 import 'api_client.dart';
 
 class ServiceApiService {
+  /// Get categories with nested services
+  Future<List<Category>> getServiceCategories() async {
+    final response = await ApiClient.get(ApiConfig.services);
+    final data = response['data'];
+
+    if (data is Map && data['categories'] != null) {
+      return (data['categories'] as List)
+          .map((json) => Category.fromJson(json))
+          .toList();
+    }
+    return [];
+  }
+
   /// Get all services
   Future<List<Service>> getAllServices() async {
     final response = await ApiClient.get(ApiConfig.services);
@@ -14,14 +27,10 @@ class ServiceApiService {
           .toList();
     }
     if (data is Map && data['categories'] != null) {
-      // If response groups by categories
       final List<Service> services = [];
       for (var cat in data['categories']) {
-        if (cat['services'] != null) {
-          for (var s in cat['services']) {
-            services.add(Service.fromJson(s));
-          }
-        }
+        final category = Category.fromJson(cat);
+        services.addAll(category.services);
       }
       return services;
     }

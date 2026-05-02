@@ -3,20 +3,35 @@ class Category {
   final String name;
   final String icon;
   final String description;
+  final List<Service> services;
 
   Category({
     required this.id,
     required this.name,
     required this.icon,
     required this.description,
+    this.services = const [],
   });
 
   factory Category.fromJson(Map<String, dynamic> json) {
-    return Category(
+    final baseCategory = Category(
       id: json['_id'] ?? json['id'] ?? '',
       name: json['name'] ?? '',
       icon: json['icon'] ?? '🔧',
       description: json['description'] ?? '',
+    );
+
+    return Category(
+      id: baseCategory.id,
+      name: baseCategory.name,
+      icon: baseCategory.icon,
+      description: baseCategory.description,
+      services: (json['services'] as List? ?? [])
+          .map(
+            (serviceJson) =>
+                Service.fromJson(serviceJson, fallbackCategory: baseCategory),
+          )
+          .toList(),
     );
   }
 }
@@ -44,10 +59,15 @@ class Service {
     this.isActive = true,
   });
 
-  factory Service.fromJson(Map<String, dynamic> json) {
+  factory Service.fromJson(
+    Map<String, dynamic> json, {
+    Category? fallbackCategory,
+  }) {
     Category? cat;
     if (json['category'] is Map<String, dynamic>) {
       cat = Category.fromJson(json['category']);
+    } else {
+      cat = fallbackCategory;
     }
 
     return Service(
@@ -57,7 +77,7 @@ class Service {
       basePrice: (json['basePrice'] ?? 0).toDouble(),
       duration: json['duration'] ?? 0,
       requiredSkills: List<String>.from(json['requiredSkills'] ?? []),
-      categoryId: json['category'] is String ? json['category'] : null,
+      categoryId: json['category'] is String ? json['category'] : cat?.id,
       category: cat,
       isActive: json['isActive'] ?? true,
     );

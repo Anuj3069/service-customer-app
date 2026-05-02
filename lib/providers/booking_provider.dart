@@ -82,6 +82,39 @@ class BookingProvider extends ChangeNotifier {
     }
   }
 
+  /// Create a booking directly when provider/service details are already known
+  Future<bool> createDirectBooking({
+    required String providerId,
+    required String serviceId,
+    required String date,
+    required String slot,
+    required double price,
+  }) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final booking = await _bookingApi.createBooking(
+        providerId: providerId,
+        serviceId: serviceId,
+        date: date,
+        slot: slot,
+        price: price,
+      );
+      _selectedBooking = booking;
+      _successMessage = 'Booking created successfully!';
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _error = e.toString();
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
   /// Fetch user bookings
   Future<void> fetchBookings({String? status}) async {
     _isLoading = true;
