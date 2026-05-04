@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../config/theme.dart';
 import '../providers/auth_provider.dart';
+import '../providers/booking_provider.dart';
 import '../widgets/gradient_button.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -66,6 +67,12 @@ class _RegisterScreenState extends State<RegisterScreen>
     if (!mounted) return;
 
     if (success) {
+      // Connect socket for real-time instant booking events
+      final user = authProvider.user;
+      if (user != null) {
+        context.read<BookingProvider>().connectSocket(user.id);
+      }
+      if (!mounted) return;
       Navigator.pushReplacementNamed(context, '/home');
     } else {
       ScaffoldMessenger.of(context).showSnackBar(

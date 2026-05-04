@@ -202,7 +202,7 @@ class _BookingsScreenState extends State<BookingsScreen>
                   size: 14, color: AppTheme.textMuted),
               const SizedBox(width: 6),
               Text(
-                booking.date.split('T')[0],
+                booking.date?.split('T')[0] ?? 'Instant',
                 style: GoogleFonts.inter(
                   fontSize: 13,
                   color: AppTheme.textSecondary,
@@ -213,7 +213,7 @@ class _BookingsScreenState extends State<BookingsScreen>
                   size: 14, color: AppTheme.textMuted),
               const SizedBox(width: 6),
               Text(
-                booking.slot,
+                booking.slot ?? 'Now',
                 style: GoogleFonts.inter(
                   fontSize: 13,
                   color: AppTheme.textSecondary,

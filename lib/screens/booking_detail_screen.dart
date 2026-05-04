@@ -93,8 +93,8 @@ class BookingDetailScreen extends StatelessWidget {
                             const SizedBox(height: 16),
                             _detailRow('Service', booking.serviceName),
                             _detailRow(
-                                'Date', booking.date.split('T')[0]),
-                            _detailRow('Time Slot', booking.slot),
+                                'Date', booking.date?.split('T')[0] ?? 'Instant'),
+                            _detailRow('Time Slot', booking.slot ?? 'Now'),
                             _detailRow(
                                 'Price', '₹${booking.price.toInt()}'),
                           ],

@@ -1,14 +1,17 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../models/booking.dart';
 import '../models/match_result.dart';
 import '../services/booking_api_service.dart';
 import '../services/match_api_service.dart';
 import '../services/review_api_service.dart';
+import '../services/socket_service.dart';
 
 class BookingProvider extends ChangeNotifier {
   final BookingApiService _bookingApi = BookingApiService();
   final MatchApiService _matchApi = MatchApiService();
   final ReviewApiService _reviewApi = ReviewApiService();
+  final SocketService _socketService = SocketService();
 
   List<Booking> _bookings = [];
   Booking? _selectedBooking;
@@ -17,12 +20,90 @@ class BookingProvider extends ChangeNotifier {
   String? _error;
   String? _successMessage;
 
+  // ── Instant Booking State ──────────────────────────
+  Booking? _instantBooking;
+  String _instantStatus = 'idle'; // idle, searching, confirmed, expired
+  Map<String, dynamic>? _confirmedProvider;
+
+  StreamSubscription? _confirmedSub;
+  StreamSubscription? _expiredSub;
+
   List<Booking> get bookings => _bookings;
   Booking? get selectedBooking => _selectedBooking;
   MatchResult? get matchResult => _matchResult;
   bool get isLoading => _isLoading;
   String? get error => _error;
   String? get successMessage => _successMessage;
+
+  Booking? get instantBooking => _instantBooking;
+  String get instantStatus => _instantStatus;
+  Map<String, dynamic>? get confirmedProvider => _confirmedProvider;
+  SocketService get socketService => _socketService;
+
+  /// Initialize socket connection after login
+  void connectSocket(String userId) {
+    _socketService.connect(userId);
+    _listenToSocketEvents();
+  }
+
+  /// Disconnect socket on logout
+  void disconnectSocket() {
+    _confirmedSub?.cancel();
+    _expiredSub?.cancel();
+    _socketService.disconnect();
+  }
+
+  void _listenToSocketEvents() {
+    _confirmedSub?.cancel();
+    _expiredSub?.cancel();
+
+    _confirmedSub = _socketService.onBookingConfirmed.listen((data) {
+      debugPrint('[BookingProvider] booking-confirmed event: $data');
+      _instantStatus = 'confirmed';
+      _confirmedProvider = data['provider'] is Map
+          ? Map<String, dynamic>.from(data['provider'])
+          : null;
+      notifyListeners();
+    });
+
+    _expiredSub = _socketService.onBookingExpired.listen((data) {
+      debugPrint('[BookingProvider] booking-expired event: $data');
+      _instantStatus = 'expired';
+      notifyListeners();
+    });
+  }
+
+  /// ── Instant Booking ─────────────────────────────────
+  Future<bool> createInstantBooking({required String serviceId}) async {
+    _isLoading = true;
+    _error = null;
+    _instantStatus = 'searching';
+    _confirmedProvider = null;
+    notifyListeners();
+
+    try {
+      _instantBooking = await _bookingApi.createInstantBooking(
+        serviceId: serviceId,
+      );
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _error = e.toString();
+      _isLoading = false;
+      _instantStatus = 'idle';
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// Reset instant booking state
+  void resetInstantBooking() {
+    _instantBooking = null;
+    _instantStatus = 'idle';
+    _confirmedProvider = null;
+    notifyListeners();
+  }
 
   /// Find a matching provider
   Future<bool> findMatch({
@@ -186,5 +267,13 @@ class BookingProvider extends ChangeNotifier {
   void clearMatchResult() {
     _matchResult = null;
     notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _confirmedSub?.cancel();
+    _expiredSub?.cancel();
+    _socketService.dispose();
+    super.dispose();
   }
 }

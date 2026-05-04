@@ -341,16 +341,18 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
                         builder: (context, bookingProvider, _) {
                           return GradientButton(
                             text: _bookNow
-                                ? 'Find Nearby Professional'
+                                ? 'Request Instant Service'
                                 : 'Confirm Slot',
-                            icon: Icons.search_rounded,
+                            icon: _bookNow
+                                ? Icons.flash_on_rounded
+                                : Icons.search_rounded,
                             isLoading: bookingProvider.isLoading,
                             onPressed:
                                 (_bookNow ||
                                     (_selectedDate != null &&
                                         _selectedSlot != null))
                                 ? () => _bookNow
-                                      ? _findMatch(service)
+                                      ? _requestInstantBooking(service)
                                       : _createDirectBooking(service)
                                 : null,
                           );
@@ -509,6 +511,27 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _requestInstantBooking(Service service) async {
+    final bookingProvider = context.read<BookingProvider>();
+
+    final success = await bookingProvider.createInstantBooking(
+      serviceId: service.id,
+    );
+
+    if (!mounted) return;
+
+    if (success) {
+      Navigator.pushNamed(context, '/instant-booking');
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(bookingProvider.error ?? 'No providers available'),
+          backgroundColor: AppTheme.error,
+        ),
+      );
+    }
   }
 
   Future<void> _findMatch(Service service) async {

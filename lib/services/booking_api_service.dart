@@ -3,7 +3,7 @@ import '../models/booking.dart';
 import 'api_client.dart';
 
 class BookingApiService {
-  /// Create a new booking
+  /// Create a new scheduled booking
   Future<Booking> createBooking({
     required String providerId,
     required String serviceId,
@@ -17,6 +17,21 @@ class BookingApiService {
       'date': date,
       'slot': slot,
       'price': price,
+    });
+
+    final data = response['data'];
+    if (data['booking'] != null) {
+      return Booking.fromJson(data['booking']);
+    }
+    return Booking.fromJson(data);
+  }
+
+  /// Create an instant booking (Uber-style broadcast to workers)
+  Future<Booking> createInstantBooking({
+    required String serviceId,
+  }) async {
+    final response = await ApiClient.post(ApiConfig.instantBooking, {
+      'serviceId': serviceId,
     });
 
     final data = response['data'];

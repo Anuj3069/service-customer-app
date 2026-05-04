@@ -1,13 +1,15 @@
 class Booking {
   final String id;
   final String userId;
-  final String providerId;
+  final String? providerId;
   final String serviceId;
-  final String date;
-  final String slot;
+  final String? date;
+  final String? slot;
   final String status;
   final double price;
+  final String type; // 'SCHEDULED' or 'INSTANT'
   final String? expiresAt;
+  final String? requestedAt;
   final String? acceptedAt;
   final String? completedAt;
   final String? cancelledAt;
@@ -20,13 +22,15 @@ class Booking {
   Booking({
     required this.id,
     required this.userId,
-    required this.providerId,
+    this.providerId,
     required this.serviceId,
-    required this.date,
-    required this.slot,
+    this.date,
+    this.slot,
     required this.status,
     required this.price,
+    this.type = 'SCHEDULED',
     this.expiresAt,
+    this.requestedAt,
     this.acceptedAt,
     this.completedAt,
     this.cancelledAt,
@@ -40,14 +44,22 @@ class Booking {
   factory Booking.fromJson(Map<String, dynamic> json) {
     return Booking(
       id: json['_id'] ?? json['id'] ?? '',
-      userId: json['userId'] is Map ? json['userId']['_id'] ?? '' : json['userId'] ?? '',
-      providerId: json['providerId'] is Map ? json['providerId']['_id'] ?? '' : json['providerId'] ?? '',
-      serviceId: json['serviceId'] is Map ? json['serviceId']['_id'] ?? '' : json['serviceId'] ?? '',
+      userId: json['userId'] is Map
+          ? json['userId']['_id'] ?? ''
+          : json['userId'] ?? '',
+      providerId: json['providerId'] is Map
+          ? json['providerId']['_id'] ?? ''
+          : json['providerId'] ?? '',
+      serviceId: json['serviceId'] is Map
+          ? json['serviceId']['_id'] ?? ''
+          : json['serviceId'] ?? '',
       date: json['date'] ?? '',
       slot: json['slot'] ?? '',
       status: json['status'] ?? 'pending',
       price: (json['price'] ?? 0).toDouble(),
+      type: json['type'] ?? 'SCHEDULED',
       expiresAt: json['expiresAt'],
+      requestedAt: json['requestedAt'],
       acceptedAt: json['acceptedAt'],
       completedAt: json['completedAt'],
       cancelledAt: json['cancelledAt'],
@@ -58,6 +70,12 @@ class Booking {
       providerDetails: json['providerId'] is Map ? json['providerId'] : null,
     );
   }
+
+  bool get isInstant => type == 'INSTANT';
+  bool get isRequested => status == 'requested';
+  bool get isExpired => status == 'expired';
+  bool get isAccepted => status == 'accepted';
+  bool get isCompleted => status == 'completed';
 
   String get serviceName => serviceDetails?['name'] ?? 'Service';
   String get providerName {

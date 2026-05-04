@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import '../config/theme.dart';
 import '../services/api_client.dart';
+import '../providers/booking_provider.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -41,6 +43,15 @@ class _SplashScreenState extends State<SplashScreen>
     if (!mounted) return;
 
     if (isLoggedIn) {
+      // Connect socket for real-time instant booking events
+      final userData = await ApiClient.getUserData();
+      if (userData != null && mounted) {
+        final userId = userData['id'] ?? userData['_id'] ?? '';
+        if (userId.isNotEmpty) {
+          context.read<BookingProvider>().connectSocket(userId);
+        }
+      }
+      if (!mounted) return;
       Navigator.pushReplacementNamed(context, '/home');
     } else {
       Navigator.pushReplacementNamed(context, '/login');

@@ -15,6 +15,7 @@ import 'screens/match_result_screen.dart';
 import 'screens/bookings_screen.dart';
 import 'screens/booking_detail_screen.dart';
 import 'screens/review_screen.dart';
+import 'screens/instant_booking_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -53,6 +54,7 @@ class AirveatCustomerApp extends StatelessWidget {
           '/bookings': (context) => const BookingsScreen(),
           '/booking-detail': (context) => const BookingDetailScreen(),
           '/review': (context) => const ReviewScreen(),
+          '/instant-booking': (context) => const InstantBookingScreen(),
         },
       ),
     );

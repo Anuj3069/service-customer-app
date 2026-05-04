@@ -18,6 +18,9 @@ class ApiConfig {
   static const String bookings = '/user/bookings';
   static String bookingById(String id) => '/user/bookings/$id';
 
+  // Instant Booking
+  static const String instantBooking = '/user/instant-booking';
+
   // Reviews
   static const String reviews = '/user/reviews';
 }
