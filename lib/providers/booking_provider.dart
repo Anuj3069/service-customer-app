@@ -25,8 +25,16 @@ class BookingProvider extends ChangeNotifier {
   String _instantStatus = 'idle'; // idle, searching, confirmed, expired
   Map<String, dynamic>? _confirmedProvider;
 
+  // ── Real-time notification state ───────────────────
+  bool _isSocketConnected = false;
+  List<Map<String, dynamic>> _realtimeNotifications = [];
+
   StreamSubscription? _confirmedSub;
   StreamSubscription? _expiredSub;
+  StreamSubscription? _acceptedSub;
+  StreamSubscription? _rejectedSub;
+  StreamSubscription? _completedSub;
+  StreamSubscription? _connectionSub;
 
   List<Booking> get bookings => _bookings;
   Booking? get selectedBooking => _selectedBooking;
@@ -39,6 +47,16 @@ class BookingProvider extends ChangeNotifier {
   String get instantStatus => _instantStatus;
   Map<String, dynamic>? get confirmedProvider => _confirmedProvider;
   SocketService get socketService => _socketService;
+  bool get isSocketConnected => _isSocketConnected;
+  List<Map<String, dynamic>> get realtimeNotifications => _realtimeNotifications;
+
+  /// Computed getters for booking categories
+  List<Booking> get pendingBookings =>
+      _bookings.where((b) => b.status == 'pending').toList();
+  List<Booking> get acceptedBookings =>
+      _bookings.where((b) => b.status == 'accepted').toList();
+  List<Booking> get completedBookings =>
+      _bookings.where((b) => b.status == 'completed').toList();
 
   /// Initialize socket connection after login
   void connectSocket(String userId) {
@@ -50,28 +68,152 @@ class BookingProvider extends ChangeNotifier {
   void disconnectSocket() {
     _confirmedSub?.cancel();
     _expiredSub?.cancel();
+    _acceptedSub?.cancel();
+    _rejectedSub?.cancel();
+    _completedSub?.cancel();
+    _connectionSub?.cancel();
     _socketService.disconnect();
+    _isSocketConnected = false;
+    _realtimeNotifications.clear();
+    notifyListeners();
   }
 
   void _listenToSocketEvents() {
     _confirmedSub?.cancel();
     _expiredSub?.cancel();
+    _acceptedSub?.cancel();
+    _rejectedSub?.cancel();
+    _completedSub?.cancel();
+    _connectionSub?.cancel();
 
+    // ── Connection state tracking ──
+    _connectionSub = _socketService.onConnectionStateChanged.listen((connected) {
+      _isSocketConnected = connected;
+      notifyListeners();
+    });
+
+    // ── Instant booking confirmed ──
     _confirmedSub = _socketService.onBookingConfirmed.listen((data) {
-      debugPrint('[BookingProvider] booking-confirmed event: $data');
+      debugPrint('[BookingProvider] 🎉 booking-confirmed: $data');
       _instantStatus = 'confirmed';
       _confirmedProvider = data['provider'] is Map
           ? Map<String, dynamic>.from(data['provider'])
           : null;
+
+      _addNotification(
+        type: 'confirmed',
+        title: 'Booking Confirmed!',
+        message: 'A provider has accepted your instant booking',
+        data: data,
+      );
+
       notifyListeners();
     });
 
+    // ── Booking expired (Redis TTL keyspace) ──
     _expiredSub = _socketService.onBookingExpired.listen((data) {
-      debugPrint('[BookingProvider] booking-expired event: $data');
+      debugPrint('[BookingProvider] ⏰ booking-expired: $data');
       _instantStatus = 'expired';
+
+      _addNotification(
+        type: 'expired',
+        title: 'Booking Expired',
+        message: data['message'] ?? 'No providers accepted your request in time.',
+        data: data,
+      );
+
+      // Auto-refresh booking list
+      fetchBookings();
+      notifyListeners();
+    });
+
+    // ── Scheduled booking accepted by worker ──
+    _acceptedSub = _socketService.onBookingAccepted.listen((data) {
+      debugPrint('[BookingProvider] ✅ booking-accepted: $data');
+
+      _addNotification(
+        type: 'accepted',
+        title: 'Booking Accepted!',
+        message: 'Your scheduled booking has been accepted by the provider',
+        data: data,
+      );
+
+      // Auto-refresh booking list to show updated status
+      fetchBookings();
+      notifyListeners();
+    });
+
+    // ── Scheduled booking rejected by worker ──
+    _rejectedSub = _socketService.onBookingRejected.listen((data) {
+      debugPrint('[BookingProvider] ❌ booking-rejected: $data');
+
+      _addNotification(
+        type: 'rejected',
+        title: 'Booking Rejected',
+        message: 'Your booking has been rejected by the provider. Please try again.',
+        data: data,
+      );
+
+      // Auto-refresh booking list
+      fetchBookings();
+      notifyListeners();
+    });
+
+    // ── Booking completed by worker ──
+    _completedSub = _socketService.onBookingCompleted.listen((data) {
+      debugPrint('[BookingProvider] 🎉 booking-completed: $data');
+
+      _addNotification(
+        type: 'completed',
+        title: 'Service Completed!',
+        message: 'Your booking has been completed. Please leave a review!',
+        data: data,
+      );
+
+      // Auto-refresh booking list
+      fetchBookings();
       notifyListeners();
     });
   }
+
+  /// Add a real-time notification
+  void _addNotification({
+    required String type,
+    required String title,
+    required String message,
+    required Map<String, dynamic> data,
+  }) {
+    _realtimeNotifications.insert(0, {
+      'type': type,
+      'title': title,
+      'message': message,
+      'data': data,
+      'timestamp': DateTime.now().toIso8601String(),
+      'isRead': false,
+    });
+    // Keep only last 20 notifications
+    if (_realtimeNotifications.length > 20) {
+      _realtimeNotifications = _realtimeNotifications.sublist(0, 20);
+    }
+  }
+
+  /// Mark a notification as read
+  void markNotificationRead(int index) {
+    if (index >= 0 && index < _realtimeNotifications.length) {
+      _realtimeNotifications[index]['isRead'] = true;
+      notifyListeners();
+    }
+  }
+
+  /// Clear all notifications
+  void clearNotifications() {
+    _realtimeNotifications.clear();
+    notifyListeners();
+  }
+
+  /// Get unread notification count
+  int get unreadNotificationCount =>
+      _realtimeNotifications.where((n) => n['isRead'] != true).length;
 
   /// ── Instant Booking ─────────────────────────────────
   Future<bool> createInstantBooking({required String serviceId}) async {
@@ -273,6 +415,10 @@ class BookingProvider extends ChangeNotifier {
   void dispose() {
     _confirmedSub?.cancel();
     _expiredSub?.cancel();
+    _acceptedSub?.cancel();
+    _rejectedSub?.cancel();
+    _completedSub?.cancel();
+    _connectionSub?.cancel();
     _socketService.dispose();
     super.dispose();
   }

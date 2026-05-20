@@ -5,8 +5,11 @@ import 'package:shimmer/shimmer.dart';
 import '../config/theme.dart';
 import '../models/service.dart';
 import '../providers/auth_provider.dart';
+import '../providers/booking_provider.dart';
 import '../providers/service_provider.dart' as sp;
 import '../widgets/glass_card.dart';
+import '../widgets/connection_banner.dart';
+import '../widgets/notification_panel.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -89,29 +92,41 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildHomeTab() {
     return SafeArea(
-      child: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildHeader(),
-            if (_selectedCategory == null) ...[
-              const SizedBox(height: 20),
-              _buildSearchToggle(),
-              const SizedBox(height: 22),
-              _buildRecentPlaces(),
-              const SizedBox(height: 24),
-              _buildSectionTitle('Select Service Category'),
-            ] else ...[
-              const SizedBox(height: 20),
-            ],
-            const SizedBox(height: 12),
-            _buildServicesList(),
-            const SizedBox(height: 22),
-            if (_selectedCategory == null) _buildBottomMessage(),
-            const SizedBox(height: 100),
-          ],
-        ),
+      child: Column(
+        children: [
+          // Connection status banner (Redis socket state)
+          Consumer<BookingProvider>(
+            builder: (_, bp, __) => ConnectionBanner(
+              isConnected: bp.isSocketConnected,
+            ),
+          ),
+          Expanded(
+            child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildHeader(),
+                  if (_selectedCategory == null) ...[
+                    const SizedBox(height: 20),
+                    _buildSearchToggle(),
+                    const SizedBox(height: 22),
+                    _buildRecentPlaces(),
+                    const SizedBox(height: 24),
+                    _buildSectionTitle('Select Service Category'),
+                  ] else ...[
+                    const SizedBox(height: 20),
+                  ],
+                  const SizedBox(height: 12),
+                  _buildServicesList(),
+                  const SizedBox(height: 22),
+                  if (_selectedCategory == null) _buildBottomMessage(),
+                  const SizedBox(height: 100),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -166,9 +181,58 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                 ),
               ),
-              _roundIcon(Icons.notifications_none_rounded, () {}),
+              _buildNotificationBell(),
             ],
           ),
+        );
+      },
+    );
+  }
+
+  Widget _buildNotificationBell() {
+    return Consumer<BookingProvider>(
+      builder: (context, bp, _) {
+        final unread = bp.unreadNotificationCount;
+        return Stack(
+          clipBehavior: Clip.none,
+          children: [
+            _roundIcon(
+              Icons.notifications_none_rounded,
+              () {
+                NotificationPanel.show(
+                  context,
+                  notifications: bp.realtimeNotifications,
+                  unreadCount: unread,
+                  onClear: () => bp.clearNotifications(),
+                  onMarkRead: (index) => bp.markNotificationRead(index),
+                );
+              },
+            ),
+            if (unread > 0)
+              Positioned(
+                right: -2,
+                top: -2,
+                child: Container(
+                  width: 20,
+                  height: 20,
+                  decoration: BoxDecoration(
+                    color: AppTheme.error,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 2),
+                  ),
+                  child: Center(
+                    child: Text(
+                      unread > 9 ? '9+' : '$unread',
+                      style: GoogleFonts.inter(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
         );
       },
     );

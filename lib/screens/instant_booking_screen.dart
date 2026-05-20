@@ -23,7 +23,7 @@ class _InstantBookingScreenState extends State<InstantBookingScreen>
   late Animation<double> _pulseAnimation;
 
   Timer? _countdownTimer;
-  int _secondsRemaining = 300; // 5 minutes
+  int _secondsRemaining = 300; // Default 5 minutes, synced with Redis TTL
 
   @override
   void initState() {
@@ -42,6 +42,21 @@ class _InstantBookingScreenState extends State<InstantBookingScreen>
     _pulseAnimation = Tween<double>(begin: 0.85, end: 1.15).animate(
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
+
+    // Sync countdown with Redis TTL via booking's expiresAt
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final bp = context.read<BookingProvider>();
+      final booking = bp.instantBooking;
+      if (booking?.expiresAt != null) {
+        try {
+          final expiry = DateTime.parse(booking!.expiresAt!);
+          final diff = expiry.difference(DateTime.now());
+          setState(() {
+            _secondsRemaining = diff.inSeconds > 0 ? diff.inSeconds : 0;
+          });
+        } catch (_) {}
+      }
+    });
 
     // Start countdown
     _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {

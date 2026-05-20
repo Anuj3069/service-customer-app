@@ -6,6 +6,7 @@ import '../providers/booking_provider.dart';
 import '../models/booking.dart';
 import '../widgets/glass_card.dart';
 import '../widgets/status_badge.dart';
+import '../widgets/connection_banner.dart';
 
 class BookingsScreen extends StatefulWidget {
   const BookingsScreen({super.key});
@@ -52,6 +53,12 @@ class _BookingsScreenState extends State<BookingsScreen>
         child: SafeArea(
           child: Column(
             children: [
+              // Connection status banner (Redis socket state)
+              Consumer<BookingProvider>(
+                builder: (_, bp, __) => ConnectionBanner(
+                  isConnected: bp.isSocketConnected,
+                ),
+              ),
               Padding(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -73,7 +80,38 @@ class _BookingsScreenState extends State<BookingsScreen>
                         ),
                       ),
                     ),
-                    const SizedBox(width: 48),
+                    // Live indicator
+                    Consumer<BookingProvider>(
+                      builder: (_, bp, __) => Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: (bp.isSocketConnected ? AppTheme.success : AppTheme.error).withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 6, height: 6,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: bp.isSocketConnected ? AppTheme.success : AppTheme.error,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              bp.isSocketConnected ? 'Live' : '•••',
+                              style: GoogleFonts.inter(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: bp.isSocketConnected ? AppTheme.success : AppTheme.error,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
                   ],
                 ),
               ),
