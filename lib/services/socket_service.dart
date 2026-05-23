@@ -11,7 +11,7 @@ import 'package:socket_io_client/socket_io_client.dart' as io;
 ///   - booking-rejected   → Scheduled booking rejected by worker
 ///   - booking-completed  → Booking marked complete by worker
 class SocketService {
-  static const String _serverUrl = 'http://10.0.2.2:3000';
+  static const String _serverUrl = 'https://service-app-rduc.onrender.com';
 
   io.Socket? _socket;
   bool _isConnected = false;

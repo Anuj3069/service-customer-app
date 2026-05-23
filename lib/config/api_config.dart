@@ -1,7 +1,7 @@
 /// API Configuration — Base URL and endpoint constants
 class ApiConfig {
-  // Use 10.0.2.2 for Android emulator (maps to host machine's localhost)
-  static const String baseUrl = 'http://10.0.2.2:3000/api/v1';
+  // Production backend URL (deployed on Render)
+  static const String baseUrl = 'https://service-app-rduc.onrender.com/api/v1';
 
   // Auth
   static const String login = '/auth/login';
