@@ -17,10 +17,14 @@ class ApiConfig {
   // Bookings
   static const String bookings = '/user/bookings';
   static String bookingById(String id) => '/user/bookings/$id';
+  static String bookingOtp(String id) => '/user/bookings/$id/otp';
 
   // Instant Booking
   static const String instantBooking = '/user/instant-booking';
 
   // Reviews
   static const String reviews = '/user/reviews';
+
+  // Nearby Workers
+  static const String nearbyWorkers = '/user/nearby-workers';
 }

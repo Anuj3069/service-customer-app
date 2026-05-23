@@ -18,6 +18,7 @@ class Booking {
   final String createdAt;
   final Map<String, dynamic>? serviceDetails;
   final Map<String, dynamic>? providerDetails;
+  final List<double>? workerLocationCoordinates;
 
   Booking({
     required this.id,
@@ -39,9 +40,17 @@ class Booking {
     required this.createdAt,
     this.serviceDetails,
     this.providerDetails,
+    this.workerLocationCoordinates,
   });
 
   factory Booking.fromJson(Map<String, dynamic> json) {
+    List<double>? coords;
+    if (json['workerLocation'] != null && json['workerLocation']['coordinates'] is List) {
+      coords = List<double>.from(
+        (json['workerLocation']['coordinates'] as List).map((x) => (x as num).toDouble()),
+      );
+    }
+
     return Booking(
       id: json['_id'] ?? json['id'] ?? '',
       userId: json['userId'] is Map
@@ -68,6 +77,7 @@ class Booking {
       createdAt: json['createdAt'] ?? '',
       serviceDetails: json['serviceId'] is Map ? json['serviceId'] : null,
       providerDetails: json['providerId'] is Map ? json['providerId'] : null,
+      workerLocationCoordinates: coords,
     );
   }
 

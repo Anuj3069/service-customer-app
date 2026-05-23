@@ -610,67 +610,109 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildCategoryMapPreview(Category category) {
-    return Container(
-      height: 190,
-      clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        color: const Color(0xFFE9EEF8),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white, width: 3),
-        boxShadow: [
-          BoxShadow(
-            color: AppTheme.primary.withValues(alpha: 0.12),
-            blurRadius: 24,
-            offset: const Offset(0, 12),
-          ),
-        ],
-      ),
-      child: Stack(
-        children: [
-          Positioned.fill(child: CustomPaint(painter: _HardcodedMapPainter())),
-          Positioned(
-            left: 16,
-            top: 16,
-            child: _mapChip(
-              icon: Icons.location_on_rounded,
-              label: 'Kolkata',
-              color: AppTheme.error,
+    return GestureDetector(
+      onTap: () {
+        Navigator.pushNamed(
+          context,
+          '/nearby-workers',
+          arguments: category,
+        );
+      },
+      child: Container(
+        height: 190,
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(
+          color: const Color(0xFFE9EEF8),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: Colors.white, width: 3),
+          boxShadow: [
+            BoxShadow(
+              color: AppTheme.primary.withValues(alpha: 0.12),
+              blurRadius: 24,
+              offset: const Offset(0, 12),
             ),
-          ),
-          Positioned(
-            right: 16,
-            top: 16,
-            child: _mapChip(
-              icon: Icons.circle,
-              label: '${category.services.length} Pros nearby',
-              color: AppTheme.success,
-            ),
-          ),
-          Center(
-            child: Container(
-              width: 88,
-              height: 88,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppTheme.primary.withValues(alpha: 0.18),
-                border: Border.all(color: Colors.white, width: 5),
+          ],
+        ),
+        child: Stack(
+          children: [
+            Positioned.fill(child: CustomPaint(painter: _HardcodedMapPainter())),
+            Positioned(
+              left: 16,
+              top: 16,
+              child: _mapChip(
+                icon: Icons.location_on_rounded,
+                label: 'Kolkata',
+                color: AppTheme.error,
               ),
-              child: Center(
-                child: Container(
-                  width: 24,
-                  height: 24,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: AppTheme.primary,
-                    border: Border.all(color: Colors.white, width: 4),
+            ),
+            Positioned(
+              right: 16,
+              top: 16,
+              child: _mapChip(
+                icon: Icons.circle,
+                label: '${category.services.length} Pros nearby',
+                color: AppTheme.success,
+              ),
+            ),
+            Center(
+              child: Container(
+                width: 88,
+                height: 88,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppTheme.primary.withValues(alpha: 0.18),
+                  border: Border.all(color: Colors.white, width: 5),
+                ),
+                child: Center(
+                  child: Container(
+                    width: 24,
+                    height: 24,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: AppTheme.primary,
+                      border: Border.all(color: Colors.white, width: 4),
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-          Positioned(left: 34, bottom: 28, child: _workerPin('2 mins')),
-          Positioned(right: 34, bottom: 42, child: _workerPin('4 mins')),
-        ],
+            Positioned(left: 34, bottom: 28, child: _workerPin('2 mins')),
+            Positioned(right: 34, bottom: 42, child: _workerPin('4 mins')),
+            Positioned(
+              bottom: 12,
+              right: 12,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AppTheme.primary,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppTheme.primary.withValues(alpha: 0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.map_rounded, color: Colors.white, size: 14),
+                    const SizedBox(width: 4),
+                    Text(
+                      'View Live Map',
+                      style: GoogleFonts.inter(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

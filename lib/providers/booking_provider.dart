@@ -6,6 +6,7 @@ import '../services/booking_api_service.dart';
 import '../services/match_api_service.dart';
 import '../services/review_api_service.dart';
 import '../services/socket_service.dart';
+import '../utils/location_helper.dart';
 
 class BookingProvider extends ChangeNotifier {
   final BookingApiService _bookingApi = BookingApiService();
@@ -280,8 +281,20 @@ class BookingProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
+      Map<String, dynamic>? customerLocation;
+      try {
+        final pos = await LocationHelper.getCurrentLocation();
+        if (pos != null) {
+          customerLocation = {
+            'coordinates': [pos.longitude, pos.latitude],
+            'address': 'Current Location',
+          };
+        }
+      } catch (_) {}
+
       _instantBooking = await _bookingApi.createInstantBooking(
         serviceId: serviceId,
+        customerLocation: customerLocation,
       );
       _isLoading = false;
       notifyListeners();
@@ -309,6 +322,20 @@ class BookingProvider extends ChangeNotifier {
     _workerCoordinates = null;
     _lastLocationTimestamp = null;
     _trackingBookingId = null;
+    notifyListeners();
+  }
+
+  /// Start live tracking manually for an active booking
+  void startTrackingBooking(Booking booking) {
+    _isTracking = true;
+    _trackingBookingId = booking.id;
+    if (booking.workerLocationCoordinates != null) {
+      _workerCoordinates = booking.workerLocationCoordinates;
+      _lastLocationTimestamp = DateTime.now().millisecondsSinceEpoch;
+    } else {
+      _workerCoordinates = null;
+      _lastLocationTimestamp = null;
+    }
     notifyListeners();
   }
 
@@ -349,12 +376,24 @@ class BookingProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
+      Map<String, dynamic>? customerLocation;
+      try {
+        final pos = await LocationHelper.getCurrentLocation();
+        if (pos != null) {
+          customerLocation = {
+            'coordinates': [pos.longitude, pos.latitude],
+            'address': 'Current Location',
+          };
+        }
+      } catch (_) {}
+
       final booking = await _bookingApi.createBooking(
         providerId: _matchResult!.provider.id,
         serviceId: _matchResult!.service.id,
         date: _matchResult!.date,
         slot: _matchResult!.slot,
         price: _matchResult!.price,
+        customerLocation: customerLocation,
       );
       _selectedBooking = booking;
       _successMessage = 'Booking created successfully!';
@@ -383,12 +422,24 @@ class BookingProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
+      Map<String, dynamic>? customerLocation;
+      try {
+        final pos = await LocationHelper.getCurrentLocation();
+        if (pos != null) {
+          customerLocation = {
+            'coordinates': [pos.longitude, pos.latitude],
+            'address': 'Current Location',
+          };
+        }
+      } catch (_) {}
+
       final booking = await _bookingApi.createBooking(
         providerId: providerId,
         serviceId: serviceId,
         date: date,
         slot: slot,
         price: price,
+        customerLocation: customerLocation,
       );
       _selectedBooking = booking;
       _successMessage = 'Booking created successfully!';
