@@ -206,13 +206,17 @@ class _BookingsScreenState extends State<BookingsScreen>
   }
 
   Widget _buildBookingCard(Booking booking) {
+    final isAccepted = booking.status == 'accepted';
     return GlassCard(
       onTap: () {
         Navigator.pushNamed(
           context,
           '/booking-detail',
           arguments: booking,
-        );
+        ).then((_) {
+          // Refresh list when returning from detail / tracking
+          context.read<BookingProvider>().fetchBookings();
+        });
       },
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -270,13 +274,64 @@ class _BookingsScreenState extends State<BookingsScreen>
                   color: AppTheme.textMuted,
                 ),
               ),
-              Text(
-                '₹${booking.price.toInt()}',
-                style: GoogleFonts.outfit(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: AppTheme.accent,
-                ),
+              Row(
+                children: [
+                  // ── Quick Track chip (accepted bookings only) ──
+                  if (isAccepted) ...[
+                    GestureDetector(
+                      onTap: () {
+                        context
+                            .read<BookingProvider>()
+                            .startTrackingBooking(booking);
+                        Navigator.pushNamed(
+                          context,
+                          '/live-tracking',
+                          arguments: booking.id,
+                        ).then((_) {
+                          context
+                              .read<BookingProvider>()
+                              .fetchBookings();
+                        });
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          gradient: AppTheme.primaryGradient,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.location_on_rounded,
+                              size: 12,
+                              color: Colors.white,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Track',
+                              style: GoogleFonts.inter(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                  ],
+                  Text(
+                    '₹${booking.price.toInt()}',
+                    style: GoogleFonts.outfit(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.accent,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),

@@ -1,12 +1,18 @@
-import 'dart:math';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
+import 'package:geolocator/geolocator.dart';
 import '../config/theme.dart';
 import '../providers/booking_provider.dart';
+import '../services/booking_api_service.dart';
+import '../utils/location_helper.dart';
 
 /// Full-screen live tracking UI shown to the customer while the worker is en route.
-/// Displays an animated radar-style visualization with live coordinate updates.
+/// Displays a real-time OpenStreetMap with the worker and customer locations.
+/// Shows a 100m nearby alert and the completion OTP.
 class LiveTrackingScreen extends StatefulWidget {
   const LiveTrackingScreen({super.key});
 
@@ -16,24 +22,32 @@ class LiveTrackingScreen extends StatefulWidget {
 
 class _LiveTrackingScreenState extends State<LiveTrackingScreen>
     with TickerProviderStateMixin {
-  late AnimationController _radarController;
   late AnimationController _pulseController;
-  late AnimationController _markerController;
   late Animation<double> _pulseAnimation;
 
-  // For smooth marker animation
-  List<double>? _previousCoords;
-  List<double>? _currentCoords;
+  // Nearby arrival animation
+  late AnimationController _arrivalController;
+  late Animation<double> _arrivalScale;
+  late Animation<double> _arrivalOpacity;
+
+  final MapController _mapController = MapController();
+
+  Position? _customerPosition;
+  final LatLng _fallbackCustomerCenter = const LatLng(22.5726, 88.3639); // Kolkata fallback
+
+  // OTP state
+  String? _otp;
+  bool _otpLoading = false;
+  bool _otpVisible = false;
+  String? _bookingId;
+
+  // Nearby alert state
+  bool _workerNearby = false;
+  bool _arrivedAlertShown = false; // show once only
 
   @override
   void initState() {
     super.initState();
-
-    // Radar sweep animation — continuous rotation
-    _radarController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 4),
-    )..repeat();
 
     // Pulse animation for the live badge
     _pulseController = AnimationController(
@@ -45,97 +59,396 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen>
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
 
-    // Marker position animation for smooth transitions
-    _markerController = AnimationController(
+    // Arrival burst animation
+    _arrivalController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 800),
+      duration: const Duration(milliseconds: 600),
     );
+    _arrivalScale = Tween<double>(begin: 0.6, end: 1.0).animate(
+      CurvedAnimation(parent: _arrivalController, curve: Curves.elasticOut),
+    );
+    _arrivalOpacity = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _arrivalController, curve: Curves.easeIn),
+    );
+
+    _fetchCustomerLocation();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Grab booking id from route args once
+    if (_bookingId == null) {
+      final args = ModalRoute.of(context)?.settings.arguments;
+      if (args != null) {
+        _bookingId = args.toString();
+        _fetchOtp();
+      }
+    }
   }
 
   @override
   void dispose() {
-    _radarController.dispose();
     _pulseController.dispose();
-    _markerController.dispose();
+    _arrivalController.dispose();
     super.dispose();
+  }
+
+  Future<void> _fetchCustomerLocation() async {
+    try {
+      final position = await LocationHelper.getCurrentLocation();
+      if (position != null && mounted) {
+        setState(() {
+          _customerPosition = position;
+        });
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _fetchOtp() async {
+    if (_bookingId == null) return;
+    setState(() => _otpLoading = true);
+    try {
+      final otp = await BookingApiService().getCompletionOtp(_bookingId!);
+      if (mounted) setState(() => _otp = otp);
+    } catch (_) {
+      // OTP not available yet — will retry on reveal
+    } finally {
+      if (mounted) setState(() => _otpLoading = false);
+    }
+  }
+
+  Future<void> _revealOtp() async {
+    if (_otp != null) {
+      setState(() => _otpVisible = !_otpVisible);
+      return;
+    }
+    setState(() => _otpLoading = true);
+    try {
+      final otp = await BookingApiService().getCompletionOtp(_bookingId!);
+      if (mounted) {
+        setState(() {
+          _otp = otp;
+          _otpVisible = true;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not fetch OTP: $e'), backgroundColor: AppTheme.error),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _otpLoading = false);
+    }
+  }
+
+  /// Haversine formula — returns distance in metres between two lat/lng points
+  double _haversineDistance(double lat1, double lon1, double lat2, double lon2) {
+    const r = 6371000.0; // Earth radius in metres
+    final dLat = (lat2 - lat1) * math.pi / 180;
+    final dLon = (lon2 - lon1) * math.pi / 180;
+    final a = math.sin(dLat / 2) * math.sin(dLat / 2) +
+        math.cos(lat1 * math.pi / 180) *
+            math.cos(lat2 * math.pi / 180) *
+            math.sin(dLon / 2) *
+            math.sin(dLon / 2);
+    return r * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a));
+  }
+
+  void _checkProximity(List<double>? workerCoords) {
+    if (workerCoords == null || workerCoords.length < 2) return;
+    if (_customerPosition == null) return;
+
+    final dist = _haversineDistance(
+      _customerPosition!.latitude,
+      _customerPosition!.longitude,
+      workerCoords[1], // latitude
+      workerCoords[0], // longitude
+    );
+
+    final isNearby = dist < 100;
+    if (isNearby != _workerNearby) {
+      setState(() => _workerNearby = isNearby);
+      if (isNearby && !_arrivedAlertShown) {
+        _arrivedAlertShown = true;
+        _arrivalController.forward(from: 0);
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Consumer<BookingProvider>(
       builder: (context, bp, _) {
-        // Animate marker when coordinates change
-        if (bp.workerCoordinates != null &&
-            bp.workerCoordinates != _currentCoords) {
-          _previousCoords = _currentCoords;
-          _currentCoords = bp.workerCoordinates;
-          _markerController
-            ..reset()
-            ..forward();
+        final workerCoords = bp.workerCoordinates;
+
+        // Check 100m proximity whenever location updates
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _checkProximity(workerCoords);
+        });
+
+        // Auto-center camera on worker when location updates
+        if (workerCoords != null && workerCoords.length == 2) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _mapController.move(
+              LatLng(workerCoords[1], workerCoords[0]),
+              _mapController.camera.zoom > 10 ? _mapController.camera.zoom : 15.0,
+            );
+          });
         }
 
         return Scaffold(
-          body: Container(
-            width: double.infinity,
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Color(0xFF0F1628), Color(0xFF1A2342), Color(0xFF0D1220)],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
+          body: Stack(
+            children: [
+              // 1. The Map View
+              _buildMapContent(bp),
+
+              // 2. Custom App Bar overlay
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: _buildHeaderOverlay(bp),
               ),
-            ),
-            child: SafeArea(
-              child: Column(
-                children: [
-                  _buildAppBar(bp),
-                  const SizedBox(height: 8),
-                  _buildLiveBadge(),
-                  const SizedBox(height: 20),
-                  Expanded(child: _buildRadarView(bp)),
-                  _buildInfoCard(bp),
-                  const SizedBox(height: 24),
-                ],
+
+              // 3. Blinking LIVE badge
+              Positioned(
+                top: kToolbarHeight + 40,
+                left: 16,
+                child: _buildLiveBadge(),
               ),
-            ),
+
+              // 4. Info Card at the bottom (OTP + coords)
+              Positioned(
+                bottom: 24,
+                left: 20,
+                right: 20,
+                child: _buildInfoCard(bp),
+              ),
+
+              // 5. Worker Arrived overlay (100m alert)
+              if (_workerNearby)
+                Positioned(
+                  top: kToolbarHeight + 80,
+                  left: 20,
+                  right: 20,
+                  child: _buildNearbyAlert(),
+                ),
+            ],
           ),
         );
       },
     );
   }
 
-  Widget _buildAppBar(BookingProvider bp) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+  Widget _buildMapContent(BookingProvider bp) {
+    final workerCoords = bp.workerCoordinates;
+
+    // Determine customer coordinate
+    final customerLatLng = _customerPosition != null
+        ? LatLng(_customerPosition!.latitude, _customerPosition!.longitude)
+        : _fallbackCustomerCenter;
+
+    // Determine worker coordinate
+    final workerLatLng = (workerCoords != null && workerCoords.length == 2)
+        ? LatLng(workerCoords[1], workerCoords[0])
+        : null;
+
+    // Center map on worker if online, else center on customer
+    final mapCenter = workerLatLng ?? customerLatLng;
+
+    // Prepare markers
+    final markers = <Marker>[
+      // Customer location marker (Blue Pulsing Pin)
+      Marker(
+        point: customerLatLng,
+        width: 60,
+        height: 60,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: AppTheme.primary.withValues(alpha: 0.25),
+                shape: BoxShape.circle,
+              ),
+            ),
+            Container(
+              width: 16,
+              height: 16,
+              decoration: BoxDecoration(
+                color: AppTheme.primary,
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 2.5),
+              ),
+            ),
+          ],
+        ),
+      ),
+    ];
+
+    // Add worker marker if available (Green Pulsing Pin with directions/person icon)
+    if (workerLatLng != null) {
+      markers.add(
+        Marker(
+          point: workerLatLng,
+          width: 80,
+          height: 80,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              AnimatedBuilder(
+                animation: _pulseAnimation,
+                builder: (context, child) {
+                  return Container(
+                    width: 48 * _pulseAnimation.value,
+                    height: 48 * _pulseAnimation.value,
+                    decoration: BoxDecoration(
+                      color: AppTheme.success.withValues(alpha: 0.25),
+                      shape: BoxShape.circle,
+                    ),
+                  );
+                },
+              ),
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: AppTheme.success,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 2.5),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.2),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.directions_car_rounded,
+                  color: Colors.white,
+                  size: 20,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // Connect customer and worker with dotted line if both coordinates available
+    final polylines = <Polyline>[];
+    if (workerLatLng != null) {
+      polylines.add(
+        Polyline(
+          points: [customerLatLng, workerLatLng],
+          color: AppTheme.primary.withValues(alpha: 0.8),
+          strokeWidth: 3.5,
+          pattern: const StrokePattern.dotted(),
+        ),
+      );
+    }
+
+    return FlutterMap(
+      mapController: _mapController,
+      options: MapOptions(
+        initialCenter: mapCenter,
+        initialZoom: 15.0,
+        maxZoom: 18.0,
+        minZoom: 10.0,
+      ),
+      children: [
+        TileLayer(
+          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+          userAgentPackageName: 'com.example.customer_app',
+        ),
+        if (polylines.isNotEmpty) PolylineLayer(polylines: polylines),
+        MarkerLayer(markers: markers),
+      ],
+    );
+  }
+
+  Widget _buildHeaderOverlay(BookingProvider bp) {
+    return Container(
+      padding: EdgeInsets.only(
+        top: MediaQuery.of(context).padding.top + 10,
+        bottom: 16,
+        left: 16,
+        right: 16,
+      ),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Colors.white,
+            Colors.white.withValues(alpha: 0.95),
+            Colors.white.withValues(alpha: 0.0),
+          ],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ),
+      ),
       child: Row(
         children: [
-          IconButton(
-            onPressed: () => Navigator.pop(context),
-            icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
-          ),
-          Expanded(
-            child: Text(
-              'Live Tracking',
-              textAlign: TextAlign.center,
-              style: GoogleFonts.outfit(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                color: Colors.white,
+          Material(
+            color: Colors.white,
+            elevation: 4,
+            shadowColor: Colors.black.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(16),
+            child: InkWell(
+              onTap: () => Navigator.pop(context),
+              borderRadius: BorderRadius.circular(16),
+              child: const SizedBox(
+                width: 44,
+                height: 44,
+                child: Icon(Icons.arrow_back_rounded, color: AppTheme.textPrimary),
               ),
             ),
           ),
-          // Stop tracking button
-          IconButton(
-            onPressed: () {
-              bp.resetTracking();
-              Navigator.pop(context);
-            },
-            icon: Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: AppTheme.error.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(8),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Live Tracking',
+                  style: GoogleFonts.outfit(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                    color: AppTheme.textPrimary,
+                  ),
+                ),
+                Text(
+                  'Tracking your provider en route',
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    color: AppTheme.textSecondary,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Material(
+            color: Colors.white,
+            elevation: 4,
+            shadowColor: Colors.black.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(16),
+            child: InkWell(
+              onTap: () {
+                bp.resetTracking();
+                Navigator.pop(context);
+              },
+              borderRadius: BorderRadius.circular(16),
+              child: const SizedBox(
+                width: 44,
+                height: 44,
+                child: Icon(Icons.close_rounded, color: AppTheme.error),
               ),
-              child: const Icon(Icons.close_rounded, color: Colors.white, size: 18),
             ),
           ),
         ],
@@ -148,10 +461,10 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen>
       animation: _pulseAnimation,
       builder: (context, child) {
         return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
           decoration: BoxDecoration(
             color: AppTheme.success.withValues(alpha: 0.15 * _pulseAnimation.value),
-            borderRadius: BorderRadius.circular(30),
+            borderRadius: BorderRadius.circular(20),
             border: Border.all(
               color: AppTheme.success.withValues(alpha: 0.4 * _pulseAnimation.value),
             ),
@@ -160,15 +473,15 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen>
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                width: 10,
-                height: 10,
+                width: 8,
+                height: 8,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: AppTheme.success,
                   boxShadow: [
                     BoxShadow(
                       color: AppTheme.success.withValues(alpha: 0.6 * _pulseAnimation.value),
-                      blurRadius: 8,
+                      blurRadius: 6,
                       spreadRadius: 2,
                     ),
                   ],
@@ -178,10 +491,10 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen>
               Text(
                 'LIVE TRACKING',
                 style: GoogleFonts.inter(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w800,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w900,
                   color: AppTheme.success,
-                  letterSpacing: 1.5,
+                  letterSpacing: 1.2,
                 ),
               ),
             ],
@@ -191,27 +504,73 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen>
     );
   }
 
-  Widget _buildRadarView(BookingProvider bp) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final size = min(constraints.maxWidth - 48, constraints.maxHeight - 48);
-        return Center(
-          child: SizedBox(
-            width: size,
-            height: size,
-            child: AnimatedBuilder(
-              animation: Listenable.merge([_radarController, _markerController]),
-              builder: (context, child) {
-                return CustomPaint(
-                  painter: _RadarPainter(
-                    sweepAngle: _radarController.value * 2 * pi,
-                    workerCoords: _currentCoords,
-                    previousCoords: _previousCoords,
-                    markerProgress: _markerController.value,
-                    hasData: bp.workerCoordinates != null,
+  /// 100m nearby arrival banner
+  Widget _buildNearbyAlert() {
+    return AnimatedBuilder(
+      animation: _arrivalController,
+      builder: (context, _) {
+        return Opacity(
+          opacity: _arrivalOpacity.value,
+          child: Transform.scale(
+            scale: _arrivalScale.value,
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    AppTheme.success,
+                    AppTheme.success.withValues(alpha: 0.85),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppTheme.success.withValues(alpha: 0.4),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
                   ),
-                );
-              },
+                ],
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: const Icon(Icons.where_to_vote_rounded,
+                        color: Colors.white, size: 28),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '🎉  Worker has Arrived!',
+                          style: GoogleFonts.outfit(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          'Your provider is within 100 metres',
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            color: Colors.white.withValues(alpha: 0.9),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         );
@@ -224,119 +583,235 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen>
     final timestamp = bp.lastLocationTimestamp;
     final timeStr = timestamp != null
         ? _formatTimestamp(timestamp)
-        : 'Waiting for update...';
+        : 'Waiting for provider location...';
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(
-            color: Colors.white.withValues(alpha: 0.1),
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.18),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
           ),
-        ),
-        child: Column(
-          children: [
-            // Status row
-            Row(
-              children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF4B82E8), Color(0xFF64B5F6)],
-                    ),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: const Icon(
-                    Icons.directions_car_rounded,
-                    color: Colors.white,
-                    size: 22,
-                  ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Provider En Route',
-                        style: GoogleFonts.outfit(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        timeStr,
-                        style: GoogleFonts.inter(
-                          fontSize: 13,
-                          color: Colors.white.withValues(alpha: 0.5),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                if (coords != null)
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: AppTheme.success.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      'Active',
-                      style: GoogleFonts.inter(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: AppTheme.success,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            if (coords != null) ...[
-              const SizedBox(height: 20),
-              // Coordinate display
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Status row
+          Row(
+            children: [
               Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16),
+                width: 46,
+                height: 46,
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.05),
-                  borderRadius: BorderRadius.circular(14),
+                  gradient: AppTheme.primaryGradient,
+                  borderRadius: BorderRadius.circular(16),
                 ),
-                child: Row(
+                child: const Icon(
+                  Icons.directions_car_rounded,
+                  color: Colors.white,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: _coordColumn(
-                        'LONGITUDE',
-                        coords[0].toStringAsFixed(6),
-                        Icons.arrow_forward_rounded,
+                    Text(
+                      _workerNearby ? 'Worker Nearby!' : 'Provider En Route',
+                      style: GoogleFonts.outfit(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        color: _workerNearby ? AppTheme.success : AppTheme.textPrimary,
                       ),
                     ),
-                    Container(
-                      width: 1,
-                      height: 40,
-                      color: Colors.white.withValues(alpha: 0.1),
-                    ),
-                    Expanded(
-                      child: _coordColumn(
-                        'LATITUDE',
-                        coords[1].toStringAsFixed(6),
-                        Icons.arrow_upward_rounded,
+                    const SizedBox(height: 2),
+                    Text(
+                      timeStr,
+                      style: GoogleFonts.inter(
+                        fontSize: 13,
+                        color: AppTheme.textSecondary,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ],
                 ),
               ),
+              if (coords != null)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: AppTheme.success.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    'Active',
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                      color: AppTheme.success,
+                    ),
+                  ),
+                ),
             ],
+          ),
+
+          // ── OTP Section ─────────────────────────────────────
+          const SizedBox(height: 16),
+          const Divider(),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.lock_rounded,
+                            size: 14, color: AppTheme.textMuted),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Job Completion OTP',
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: AppTheme.textMuted,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    // OTP digits display
+                    _otpLoading
+                        ? const SizedBox(
+                            height: 36,
+                            child: Center(
+                              child: SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: AppTheme.primary,
+                                ),
+                              ),
+                            ),
+                          )
+                        : _otpVisible && _otp != null && _otp!.isNotEmpty
+                            ? Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: _otp!.split('').map((digit) {
+                                  return Container(
+                                    margin: const EdgeInsets.only(right: 8),
+                                    width: 40,
+                                    height: 44,
+                                    decoration: BoxDecoration(
+                                      gradient: AppTheme.primaryGradient,
+                                      borderRadius: BorderRadius.circular(12),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: AppTheme.primary.withValues(alpha: 0.3),
+                                          blurRadius: 8,
+                                          offset: const Offset(0, 4),
+                                        ),
+                                      ],
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        digit,
+                                        style: GoogleFonts.jetBrainsMono(
+                                          fontSize: 22,
+                                          fontWeight: FontWeight.w900,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                }).toList(),
+                              )
+                            : Text(
+                                '● ● ● ●',
+                                style: GoogleFonts.inter(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w900,
+                                  color: AppTheme.textMuted,
+                                  letterSpacing: 6,
+                                ),
+                              ),
+                  ],
+                ),
+              ),
+              // Show/hide OTP button
+              GestureDetector(
+                onTap: _revealOtp,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primary.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: AppTheme.primary.withValues(alpha: 0.2),
+                    ),
+                  ),
+                  child: Text(
+                    _otpVisible ? 'Hide' : 'Show OTP',
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.primary,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          if (coords != null && coords.length == 2) ...[
+            const SizedBox(height: 16),
+            const Divider(),
+            const SizedBox(height: 16),
+            // Coordinate display
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              decoration: BoxDecoration(
+                color: AppTheme.bgDark,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppTheme.primary.withValues(alpha: 0.06)),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: _coordColumn(
+                      'LONGITUDE',
+                      coords[0].toStringAsFixed(6),
+                      Icons.arrow_forward_rounded,
+                    ),
+                  ),
+                  Container(
+                    width: 1,
+                    height: 36,
+                    color: AppTheme.textMuted.withValues(alpha: 0.2),
+                  ),
+                  Expanded(
+                    child: _coordColumn(
+                      'LATITUDE',
+                      coords[1].toStringAsFixed(6),
+                      Icons.arrow_upward_rounded,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
-        ),
+        ],
       ),
     );
   }
@@ -348,26 +823,26 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen>
           mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 12, color: Colors.white.withValues(alpha: 0.4)),
+            Icon(icon, size: 12, color: AppTheme.textSecondary),
             const SizedBox(width: 4),
             Text(
               label,
               style: GoogleFonts.inter(
                 fontSize: 10,
-                fontWeight: FontWeight.w700,
-                color: Colors.white.withValues(alpha: 0.4),
-                letterSpacing: 1.2,
+                fontWeight: FontWeight.w800,
+                color: AppTheme.textSecondary,
+                letterSpacing: 1.0,
               ),
             ),
           ],
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: 4),
         Text(
           value,
           style: GoogleFonts.jetBrainsMono(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: Colors.white.withValues(alpha: 0.9),
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
+            color: AppTheme.textPrimary,
           ),
         ),
       ],
@@ -382,184 +857,5 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen>
     if (diff.inSeconds < 60) return '${diff.inSeconds}s ago';
     if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
     return '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════
-// Radar-style Custom Painter
-// ═══════════════════════════════════════════════════════════════
-
-class _RadarPainter extends CustomPainter {
-  final double sweepAngle;
-  final List<double>? workerCoords;
-  final List<double>? previousCoords;
-  final double markerProgress;
-  final bool hasData;
-
-  _RadarPainter({
-    required this.sweepAngle,
-    this.workerCoords,
-    this.previousCoords,
-    required this.markerProgress,
-    required this.hasData,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = size.width / 2 - 8;
-
-    // Background circles (concentric rings)
-    final ringPaint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 0.5;
-
-    for (int i = 1; i <= 4; i++) {
-      final r = radius * i / 4;
-      ringPaint.color = Colors.white.withValues(alpha: 0.08);
-      canvas.drawCircle(center, r, ringPaint);
-    }
-
-    // Cross-hair lines
-    final crossPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.06)
-      ..strokeWidth = 0.5;
-
-    canvas.drawLine(
-      Offset(center.dx, center.dy - radius),
-      Offset(center.dx, center.dy + radius),
-      crossPaint,
-    );
-    canvas.drawLine(
-      Offset(center.dx - radius, center.dy),
-      Offset(center.dx + radius, center.dy),
-      crossPaint,
-    );
-
-    // Diagonal cross-hairs
-    final diagOffset = radius * 0.707; // cos(45°)
-    canvas.drawLine(
-      Offset(center.dx - diagOffset, center.dy - diagOffset),
-      Offset(center.dx + diagOffset, center.dy + diagOffset),
-      crossPaint,
-    );
-    canvas.drawLine(
-      Offset(center.dx + diagOffset, center.dy - diagOffset),
-      Offset(center.dx - diagOffset, center.dy + diagOffset),
-      crossPaint,
-    );
-
-    // Radar sweep gradient
-    final sweepPaint = Paint()
-      ..shader = SweepGradient(
-        center: Alignment.center,
-        startAngle: sweepAngle - 0.8,
-        endAngle: sweepAngle,
-        colors: [
-          Colors.transparent,
-          const Color(0xFF4B82E8).withValues(alpha: 0.3),
-        ],
-        transform: GradientRotation(sweepAngle - 0.8),
-      ).createShader(Rect.fromCircle(center: center, radius: radius));
-
-    canvas.drawCircle(center, radius, sweepPaint);
-
-    // Sweep line
-    final sweepLinePaint = Paint()
-      ..color = const Color(0xFF4B82E8).withValues(alpha: 0.6)
-      ..strokeWidth = 1.5;
-
-    canvas.drawLine(
-      center,
-      Offset(
-        center.dx + radius * cos(sweepAngle),
-        center.dy + radius * sin(sweepAngle),
-      ),
-      sweepLinePaint,
-    );
-
-    // Center point (customer location)
-    final centerDotPaint = Paint()
-      ..color = const Color(0xFF36A56D);
-    canvas.drawCircle(center, 6, centerDotPaint);
-
-    final centerRingPaint = Paint()
-      ..color = const Color(0xFF36A56D).withValues(alpha: 0.3)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2;
-    canvas.drawCircle(center, 12, centerRingPaint);
-
-    // Worker marker (if we have coordinates)
-    if (workerCoords != null && hasData) {
-      // Map coordinates to a position within the radar
-      // Use a simple approach: offset from center based on coordinate deltas
-      Offset markerPos;
-
-      if (previousCoords != null && markerProgress < 1.0) {
-        // Interpolate between previous and current position
-        final prevX = _coordToOffset(previousCoords![0], radius);
-        final prevY = _coordToOffset(previousCoords![1], radius);
-        final currX = _coordToOffset(workerCoords![0], radius);
-        final currY = _coordToOffset(workerCoords![1], radius);
-
-        markerPos = Offset(
-          center.dx + _lerp(prevX, currX, markerProgress),
-          center.dy - _lerp(prevY, currY, markerProgress),
-        );
-      } else {
-        markerPos = Offset(
-          center.dx + _coordToOffset(workerCoords![0], radius),
-          center.dy - _coordToOffset(workerCoords![1], radius),
-        );
-      }
-
-      // Glow ring
-      final glowPaint = Paint()
-        ..color = const Color(0xFF4B82E8).withValues(alpha: 0.2)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12);
-      canvas.drawCircle(markerPos, 18, glowPaint);
-
-      // Outer ring
-      final outerRing = Paint()
-        ..color = const Color(0xFF4B82E8).withValues(alpha: 0.4)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 2;
-      canvas.drawCircle(markerPos, 14, outerRing);
-
-      // Worker dot
-      final workerPaint = Paint()
-        ..color = const Color(0xFF4B82E8);
-      canvas.drawCircle(markerPos, 8, workerPaint);
-
-      // Inner white dot
-      final innerPaint = Paint()
-        ..color = Colors.white;
-      canvas.drawCircle(markerPos, 3, innerPaint);
-    }
-
-    // Outer border ring
-    final borderPaint = Paint()
-      ..color = const Color(0xFF4B82E8).withValues(alpha: 0.3)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5;
-    canvas.drawCircle(center, radius, borderPaint);
-  }
-
-  double _coordToOffset(double coord, double radius) {
-    // Map coordinate to radar space
-    // Use modulo to keep within bounds, centered around a reference
-    final normalized = ((coord % 1.0) - 0.5) * 2; // -1 to 1
-    return normalized * radius * 0.6;
-  }
-
-  double _lerp(double a, double b, double t) {
-    return a + (b - a) * t;
-  }
-
-  @override
-  bool shouldRepaint(covariant _RadarPainter oldDelegate) {
-    return oldDelegate.sweepAngle != sweepAngle ||
-        oldDelegate.workerCoords != workerCoords ||
-        oldDelegate.markerProgress != markerProgress;
   }
 }

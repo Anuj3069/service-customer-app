@@ -17,6 +17,9 @@ import 'screens/booking_detail_screen.dart';
 import 'screens/review_screen.dart';
 import 'screens/instant_booking_screen.dart';
 import 'screens/live_tracking_screen.dart';
+import 'screens/nearby_workers_screen.dart';
+
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -44,6 +47,7 @@ class AirveatCustomerApp extends StatelessWidget {
         title: 'Airveat - Book Services',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.darkTheme,
+        navigatorKey: navigatorKey,
         initialRoute: '/',
         routes: {
           '/': (context) => const SplashScreen(),
@@ -57,6 +61,7 @@ class AirveatCustomerApp extends StatelessWidget {
           '/review': (context) => const ReviewScreen(),
           '/instant-booking': (context) => const InstantBookingScreen(),
           '/live-tracking': (context) => const LiveTrackingScreen(),
+          '/nearby-workers': (context) => const NearbyWorkersScreen(),
         },
       ),
     );

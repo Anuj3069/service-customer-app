@@ -10,6 +10,7 @@ class BookingApiService {
     required String date,
     required String slot,
     required double price,
+    Map<String, dynamic>? customerLocation,
   }) async {
     final response = await ApiClient.post(ApiConfig.bookings, {
       'providerId': providerId,
@@ -17,6 +18,7 @@ class BookingApiService {
       'date': date,
       'slot': slot,
       'price': price,
+      if (customerLocation != null) 'customerLocation': customerLocation,
     });
 
     final data = response['data'];
@@ -29,9 +31,11 @@ class BookingApiService {
   /// Create an instant booking (Uber-style broadcast to workers)
   Future<Booking> createInstantBooking({
     required String serviceId,
+    Map<String, dynamic>? customerLocation,
   }) async {
     final response = await ApiClient.post(ApiConfig.instantBooking, {
       'serviceId': serviceId,
+      if (customerLocation != null) 'customerLocation': customerLocation,
     });
 
     final data = response['data'];
@@ -68,5 +72,12 @@ class BookingApiService {
       return Booking.fromJson(data['booking']);
     }
     return Booking.fromJson(data);
+  }
+
+  /// Get the completion OTP for an accepted booking (customer-only)
+  Future<String> getCompletionOtp(String bookingId) async {
+    final response = await ApiClient.get(ApiConfig.bookingOtp(bookingId));
+    final data = response['data'];
+    return data['otp']?.toString() ?? '';
   }
 }
