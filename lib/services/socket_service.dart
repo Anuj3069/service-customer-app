@@ -33,6 +33,10 @@ class SocketService {
       StreamController<Map<String, dynamic>>.broadcast();
   final _bookingCompletedController =
       StreamController<Map<String, dynamic>>.broadcast();
+  final _trackingStartedController =
+      StreamController<Map<String, dynamic>>.broadcast();
+  final _workerLocationController =
+      StreamController<Map<String, dynamic>>.broadcast();
   final _connectionStateController = StreamController<bool>.broadcast();
 
   // ── Public Streams ──
@@ -46,6 +50,10 @@ class SocketService {
       _bookingRejectedController.stream;
   Stream<Map<String, dynamic>> get onBookingCompleted =>
       _bookingCompletedController.stream;
+  Stream<Map<String, dynamic>> get onTrackingStarted =>
+      _trackingStartedController.stream;
+  Stream<Map<String, dynamic>> get onWorkerLocation =>
+      _workerLocationController.stream;
   Stream<bool> get onConnectionStateChanged =>
       _connectionStateController.stream;
 
@@ -147,6 +155,20 @@ class SocketService {
       _addToController(_bookingCompletedController, data);
     });
 
+    // ── Live Tracking events ──
+
+    // Worker has started driving to customer
+    _socket!.on('tracking-started', (data) {
+      debugPrint('[Socket] 📍 tracking-started: $data');
+      _addToController(_trackingStartedController, data);
+    });
+
+    // Worker's live GPS location update
+    _socket!.on('worker-location', (data) {
+      debugPrint('[Socket] 🗺️ worker-location: $data');
+      _addToController(_workerLocationController, data);
+    });
+
     _socket!.connect();
   }
 
@@ -180,6 +202,8 @@ class SocketService {
     _bookingAcceptedController.close();
     _bookingRejectedController.close();
     _bookingCompletedController.close();
+    _trackingStartedController.close();
+    _workerLocationController.close();
     _connectionStateController.close();
   }
 }

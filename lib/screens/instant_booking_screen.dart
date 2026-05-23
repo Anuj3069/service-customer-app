@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -66,10 +65,33 @@ class _InstantBookingScreenState extends State<InstantBookingScreen>
         timer.cancel();
       }
     });
+
+    // Listen for tracking to auto-navigate to live tracking screen
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final bp = context.read<BookingProvider>();
+      bp.addListener(_onTrackingChanged);
+    });
+  }
+
+  void _onTrackingChanged() {
+    if (!mounted) return;
+    final bp = context.read<BookingProvider>();
+    if (bp.isTracking && bp.trackingBookingId != null) {
+      bp.removeListener(_onTrackingChanged);
+      Navigator.pushNamed(
+        context,
+        '/live-tracking',
+        arguments: bp.trackingBookingId,
+      );
+    }
   }
 
   @override
   void dispose() {
+    // Remove tracking listener
+    try {
+      context.read<BookingProvider>().removeListener(_onTrackingChanged);
+    } catch (_) {}
     _pulseController.dispose();
     _rotateController.dispose();
     _countdownTimer?.cancel();
@@ -110,6 +132,15 @@ class _InstantBookingScreenState extends State<InstantBookingScreen>
         return _buildConfirmedView(bp);
       case 'expired':
         return _buildExpiredView();
+      case 'tracking':
+        // If somehow still on this screen when tracking, redirect
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && bp.trackingBookingId != null) {
+            Navigator.pushNamed(context, '/live-tracking',
+                arguments: bp.trackingBookingId);
+          }
+        });
+        return _buildConfirmedView(bp);
       default:
         return _buildSearchingView(bp);
     }
@@ -414,6 +445,22 @@ class _InstantBookingScreenState extends State<InstantBookingScreen>
             ),
           const SizedBox(height: 40),
 
+          // Track Provider button
+          GradientButton(
+            text: 'Track Provider',
+            icon: Icons.location_on_rounded,
+            onPressed: () {
+              final bookingId = bp.instantBooking?.id ?? bp.trackingBookingId;
+              if (bookingId != null) {
+                Navigator.pushNamed(
+                  context,
+                  '/live-tracking',
+                  arguments: bookingId,
+                );
+              }
+            },
+          ),
+          const SizedBox(height: 12),
           GradientButton(
             text: 'View My Bookings',
             icon: Icons.list_alt_rounded,

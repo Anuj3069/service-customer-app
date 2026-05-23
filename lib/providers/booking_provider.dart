@@ -20,10 +20,16 @@ class BookingProvider extends ChangeNotifier {
   String? _error;
   String? _successMessage;
 
-  // ── Instant Booking State ──────────────────────────
+  // ── Instant Booking State ──────────────────────────────
   Booking? _instantBooking;
   String _instantStatus = 'idle'; // idle, searching, confirmed, expired
   Map<String, dynamic>? _confirmedProvider;
+
+  // ── Live Tracking State ───────────────────────────────
+  bool _isTracking = false;
+  List<double>? _workerCoordinates;
+  int? _lastLocationTimestamp;
+  String? _trackingBookingId;
 
   // ── Real-time notification state ───────────────────
   bool _isSocketConnected = false;
@@ -35,6 +41,8 @@ class BookingProvider extends ChangeNotifier {
   StreamSubscription? _rejectedSub;
   StreamSubscription? _completedSub;
   StreamSubscription? _connectionSub;
+  StreamSubscription? _trackingStartedSub;
+  StreamSubscription? _workerLocationSub;
 
   List<Booking> get bookings => _bookings;
   Booking? get selectedBooking => _selectedBooking;
@@ -49,6 +57,12 @@ class BookingProvider extends ChangeNotifier {
   SocketService get socketService => _socketService;
   bool get isSocketConnected => _isSocketConnected;
   List<Map<String, dynamic>> get realtimeNotifications => _realtimeNotifications;
+
+  // ── Live Tracking Getters ──
+  bool get isTracking => _isTracking;
+  List<double>? get workerCoordinates => _workerCoordinates;
+  int? get lastLocationTimestamp => _lastLocationTimestamp;
+  String? get trackingBookingId => _trackingBookingId;
 
   /// Computed getters for booking categories
   List<Booking> get pendingBookings =>
@@ -72,9 +86,12 @@ class BookingProvider extends ChangeNotifier {
     _rejectedSub?.cancel();
     _completedSub?.cancel();
     _connectionSub?.cancel();
+    _trackingStartedSub?.cancel();
+    _workerLocationSub?.cancel();
     _socketService.disconnect();
     _isSocketConnected = false;
     _realtimeNotifications.clear();
+    resetTracking();
     notifyListeners();
   }
 
@@ -85,6 +102,8 @@ class BookingProvider extends ChangeNotifier {
     _rejectedSub?.cancel();
     _completedSub?.cancel();
     _connectionSub?.cancel();
+    _trackingStartedSub?.cancel();
+    _workerLocationSub?.cancel();
 
     // ── Connection state tracking ──
     _connectionSub = _socketService.onConnectionStateChanged.listen((connected) {
@@ -174,6 +193,43 @@ class BookingProvider extends ChangeNotifier {
       fetchBookings();
       notifyListeners();
     });
+
+    // ── Live Tracking: Worker started driving ──
+    _trackingStartedSub = _socketService.onTrackingStarted.listen((data) {
+      debugPrint('[BookingProvider] 📍 tracking-started: $data');
+      final bookingId = data['bookingId']?.toString();
+      _isTracking = true;
+      _trackingBookingId = bookingId;
+      _workerCoordinates = null;
+      _lastLocationTimestamp = null;
+
+      _addNotification(
+        type: 'tracking',
+        title: 'Provider En Route!',
+        message: 'Your provider is on the way to you',
+        data: data,
+      );
+
+      notifyListeners();
+    });
+
+    // ── Live Tracking: Worker GPS update ──
+    _workerLocationSub = _socketService.onWorkerLocation.listen((data) {
+      debugPrint('[BookingProvider] 🗺️ worker-location: $data');
+      final coords = data['coordinates'];
+      if (coords is List && coords.length == 2) {
+        _workerCoordinates = [
+          (coords[0] as num).toDouble(),
+          (coords[1] as num).toDouble(),
+        ];
+      }
+      _lastLocationTimestamp = data['timestamp'] is int
+          ? data['timestamp']
+          : DateTime.now().millisecondsSinceEpoch;
+      _trackingBookingId = data['bookingId']?.toString() ?? _trackingBookingId;
+
+      notifyListeners();
+    });
   }
 
   /// Add a real-time notification
@@ -244,6 +300,15 @@ class BookingProvider extends ChangeNotifier {
     _instantBooking = null;
     _instantStatus = 'idle';
     _confirmedProvider = null;
+    notifyListeners();
+  }
+
+  /// Reset live tracking state
+  void resetTracking() {
+    _isTracking = false;
+    _workerCoordinates = null;
+    _lastLocationTimestamp = null;
+    _trackingBookingId = null;
     notifyListeners();
   }
 
@@ -419,6 +484,8 @@ class BookingProvider extends ChangeNotifier {
     _rejectedSub?.cancel();
     _completedSub?.cancel();
     _connectionSub?.cancel();
+    _trackingStartedSub?.cancel();
+    _workerLocationSub?.cancel();
     _socketService.dispose();
     super.dispose();
   }
