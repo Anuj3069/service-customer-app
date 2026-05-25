@@ -534,31 +534,6 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
     }
   }
 
-  Future<void> _findMatch(Service service) async {
-    final bookingProvider = context.read<BookingProvider>();
-    final dateStr = (_bookNow ? DateTime.now() : _selectedDate!)
-        .toIso8601String();
-
-    final success = await bookingProvider.findMatch(
-      serviceId: service.id,
-      date: dateStr,
-      slot: _bookNow ? 'Now' : _selectedSlot!,
-    );
-
-    if (!mounted) return;
-
-    if (success) {
-      Navigator.pushNamed(context, '/match-result');
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(bookingProvider.error ?? 'No provider available'),
-          backgroundColor: AppTheme.error,
-        ),
-      );
-    }
-  }
-
   Future<void> _createDirectBooking(Service service) async {
     final bookingProvider = context.read<BookingProvider>();
     final bookingDate = _dateWithSlotStart(_selectedDate!, _selectedSlot!);

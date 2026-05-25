@@ -215,6 +215,7 @@ class _BookingsScreenState extends State<BookingsScreen>
           arguments: booking,
         ).then((_) {
           // Refresh list when returning from detail / tracking
+          if (!mounted) return;
           context.read<BookingProvider>().fetchBookings();
         });
       },
@@ -288,6 +289,7 @@ class _BookingsScreenState extends State<BookingsScreen>
                           '/live-tracking',
                           arguments: booking.id,
                         ).then((_) {
+                          if (!mounted) return;
                           context
                               .read<BookingProvider>()
                               .fetchBookings();

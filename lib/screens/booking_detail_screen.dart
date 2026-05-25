@@ -315,6 +315,18 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                           icon: Icons.location_on_rounded,
                           onPressed: () => _openTracking(booking),
                         ),
+                        const SizedBox(height: 12),
+                        GradientButton(
+                          text: 'Chat with Provider',
+                          icon: Icons.chat_bubble_rounded,
+                          onPressed: () {
+                            Navigator.pushNamed(
+                              context,
+                              '/chat',
+                              arguments: booking,
+                            );
+                          },
+                        ),
                         const SizedBox(height: 16),
 
                         // ── Completion OTP Card ──
