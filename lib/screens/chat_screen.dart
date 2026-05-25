@@ -132,13 +132,31 @@ class _ChatScreenState extends State<ChatScreen> {
           child: Column(
             children: [
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
                 child: Row(
                   children: [
-                    IconButton(
-                      onPressed: () => Navigator.pop(context),
-                      icon: const Icon(Icons.arrow_back_rounded, color: AppTheme.textPrimary),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(14),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.05),
+                            blurRadius: 8,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: IconButton(
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(
+                          Icons.arrow_back_rounded,
+                          color: AppTheme.textPrimary,
+                          size: 20,
+                        ),
+                      ),
                     ),
+                    const SizedBox(width: 16),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -147,13 +165,17 @@ class _ChatScreenState extends State<ChatScreen> {
                             booking?.providerName ?? 'Provider',
                             style: GoogleFonts.outfit(
                               fontSize: 18,
-                              fontWeight: FontWeight.w700,
+                              fontWeight: FontWeight.w800,
                               color: AppTheme.textPrimary,
                             ),
                           ),
                           Text(
                             booking?.serviceName ?? 'Booking chat',
-                            style: GoogleFonts.inter(fontSize: 12, color: AppTheme.textMuted),
+                            style: GoogleFonts.inter(
+                              fontSize: 12,
+                              color: AppTheme.textMuted,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ],
                       ),
@@ -244,10 +266,17 @@ class _Composer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.fromLTRB(16, 10, 16, 12 + MediaQuery.of(context).padding.bottom),
+      padding: EdgeInsets.fromLTRB(16, 12, 16, 16 + MediaQuery.of(context).padding.bottom),
       decoration: BoxDecoration(
-        color: AppTheme.bgCard,
-        border: Border(top: BorderSide(color: AppTheme.textMuted.withValues(alpha: 0.12))),
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, -4),
+          ),
+        ],
+        border: Border(top: BorderSide(color: AppTheme.primary.withValues(alpha: 0.05))),
       ),
       child: Row(
         children: [
@@ -260,37 +289,52 @@ class _Composer extends StatelessWidget {
               onSubmitted: (_) => onSend(),
               style: GoogleFonts.inter(color: AppTheme.textPrimary, fontSize: 14),
               decoration: InputDecoration(
-                hintText: 'Message',
-                hintStyle: GoogleFonts.inter(color: AppTheme.textMuted),
+                hintText: 'Type a message...',
+                hintStyle: GoogleFonts.inter(color: AppTheme.textMuted, fontWeight: FontWeight.w500),
                 filled: true,
-                fillColor: AppTheme.textMuted.withValues(alpha: 0.08),
+                fillColor: AppTheme.primary.withValues(alpha: 0.03),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide.none,
+                  borderRadius: BorderRadius.circular(20),
+                  borderSide: BorderSide(color: AppTheme.primary.withValues(alpha: 0.05)),
                 ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(20),
+                  borderSide: BorderSide(color: AppTheme.primary.withValues(alpha: 0.05)),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(20),
+                  borderSide: BorderSide(color: AppTheme.primary.withValues(alpha: 0.15)),
+                ),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
               ),
             ),
           ),
-          const SizedBox(width: 10),
-          SizedBox(
-            width: 48,
-            height: 48,
-            child: ElevatedButton(
-              onPressed: sending ? null : onSend,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primary,
-                foregroundColor: Colors.white,
-                padding: EdgeInsets.zero,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          const SizedBox(width: 12),
+          GestureDetector(
+            onTap: sending ? null : onSend,
+            child: Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                gradient: AppTheme.primaryGradient,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppTheme.primary.withValues(alpha: 0.25),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
-              child: sending
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                    )
-                  : const Icon(Icons.send_rounded, size: 20),
+              child: Center(
+                child: sending
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      )
+                    : const Icon(Icons.send_rounded, size: 20, color: Colors.white),
+              ),
             ),
           ),
         ],

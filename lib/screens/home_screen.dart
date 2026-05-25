@@ -7,7 +7,6 @@ import '../models/service.dart';
 import '../providers/auth_provider.dart';
 import '../providers/booking_provider.dart';
 import '../providers/service_provider.dart' as sp;
-import '../widgets/glass_card.dart';
 import '../widgets/connection_banner.dart';
 import '../widgets/notification_panel.dart';
 
@@ -22,6 +21,47 @@ class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
   bool _bookNow = true;
   Category? _selectedCategory;
+
+  String _getCategoryEmoji(String name) {
+    final cleanName = name.toLowerCase();
+    if (cleanName.contains('plumbing')) return '🚰';
+    if (cleanName.contains('cleaning')) return '🧹';
+    if (cleanName.contains('electric')) return '⚡';
+    if (cleanName.contains('paint')) return '🎨';
+    if (cleanName.contains('appliance')) return '🔌';
+    if (cleanName.contains('handyman')) return '🔨';
+    return '🛠️';
+  }
+
+  IconData _getCategoryIcon(String name) {
+    final cleanName = name.toLowerCase();
+    if (cleanName.contains('plumbing')) return Icons.plumbing_rounded;
+    if (cleanName.contains('cleaning')) return Icons.cleaning_services_rounded;
+    if (cleanName.contains('electric')) return Icons.electrical_services_rounded;
+    if (cleanName.contains('paint')) return Icons.format_paint_rounded;
+    if (cleanName.contains('handyman')) return Icons.handyman_rounded;
+    return Icons.home_repair_service_rounded;
+  }
+
+  Color _getCategoryColor(String name) {
+    final cleanName = name.toLowerCase();
+    if (cleanName.contains('plumbing')) return const Color(0xFFEFF7FF);
+    if (cleanName.contains('cleaning')) return const Color(0xFFF0EDFF);
+    if (cleanName.contains('electric')) return const Color(0xFFFFF4E1);
+    if (cleanName.contains('paint')) return const Color(0xFFFFF0F7);
+    if (cleanName.contains('handyman')) return const Color(0xFFFFF1E9);
+    return const Color(0xFFF1F6FF);
+  }
+
+  Color _getCategoryIconColor(String name) {
+    final cleanName = name.toLowerCase();
+    if (cleanName.contains('plumbing')) return const Color(0xFF2196F3);
+    if (cleanName.contains('cleaning')) return const Color(0xFF673AB7);
+    if (cleanName.contains('electric')) return const Color(0xFFFF9800);
+    if (cleanName.contains('paint')) return const Color(0xFFE91E63);
+    if (cleanName.contains('handyman')) return const Color(0xFFFF5722);
+    return const Color(0xFF3F51B5);
+  }
 
   @override
   void initState() {
@@ -476,29 +516,17 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildCategoryTile(Category category, int index) {
-    final icons = [
-      Icons.electrical_services_rounded,
-      Icons.cleaning_services_rounded,
-      Icons.format_paint_rounded,
-      Icons.plumbing_rounded,
-      Icons.handyman_rounded,
-      Icons.home_repair_service_rounded,
-    ];
-    final colors = [
-      const Color(0xFFFFF4E1),
-      const Color(0xFFEFF7FF),
-      const Color(0xFFFFF0F7),
-      const Color(0xFFF0EDFF),
-      const Color(0xFFFFF1E9),
-      const Color(0xFFF1F6FF),
-    ];
+    final color = _getCategoryColor(category.name);
+    final icon = _getCategoryIcon(category.name);
+    final iconColor = _getCategoryIconColor(category.name);
+    final emoji = _getCategoryEmoji(category.name);
 
     return GestureDetector(
       onTap: () => setState(() => _selectedCategory = category),
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: colors[index % colors.length],
+          color: color,
           borderRadius: BorderRadius.circular(18),
           border: Border.all(color: Colors.white.withValues(alpha: 0.8)),
           boxShadow: [
@@ -515,8 +543,8 @@ class _HomeScreenState extends State<HomeScreen> {
               right: 0,
               bottom: -2,
               child: Icon(
-                icons[index % icons.length],
-                color: AppTheme.primary.withValues(alpha: 0.78),
+                icon,
+                color: iconColor.withValues(alpha: 0.35),
                 size: 44,
               ),
             ),
@@ -524,7 +552,7 @@ class _HomeScreenState extends State<HomeScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  category.name,
+                  '${category.name} $emoji',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.outfit(
@@ -577,7 +605,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      category.name,
+                      '${category.name} ${_getCategoryEmoji(category.name)}',
                       style: GoogleFonts.outfit(
                         fontSize: 24,
                         fontWeight: FontWeight.w800,
@@ -602,7 +630,7 @@ class _HomeScreenState extends State<HomeScreen> {
           _buildCategoryMapPreview(category),
           const SizedBox(height: 16),
           ...category.services.asMap().entries.map(
-            (entry) => _buildServiceListCard(entry.value, entry.key),
+            (entry) => _buildServiceListCard(entry.value, entry.key, category.name),
           ),
         ],
       ),
@@ -656,21 +684,26 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             Center(
               child: Container(
-                width: 88,
-                height: 88,
+                width: 46,
+                height: 46,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: AppTheme.primary.withValues(alpha: 0.18),
-                  border: Border.all(color: Colors.white, width: 5),
+                  color: Colors.white,
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppTheme.primary.withValues(alpha: 0.25),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
                 child: Center(
-                  child: Container(
-                    width: 24,
-                    height: 24,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
+                  child: Transform.rotate(
+                    angle: -3.14159 / 4, // Point Northeast
+                    child: const Icon(
+                      Icons.navigation_rounded,
                       color: AppTheme.primary,
-                      border: Border.all(color: Colors.white, width: 4),
+                      size: 24,
                     ),
                   ),
                 ),
@@ -763,6 +796,13 @@ class _HomeScreenState extends State<HomeScreen> {
             shape: BoxShape.circle,
             color: AppTheme.success,
             border: Border.all(color: Colors.white, width: 4),
+            boxShadow: [
+              BoxShadow(
+                color: AppTheme.success.withValues(alpha: 0.25),
+                blurRadius: 8,
+                offset: const Offset(0, 3),
+              ),
+            ],
           ),
           child: const Icon(
             Icons.person_rounded,
@@ -776,6 +816,13 @@ class _HomeScreenState extends State<HomeScreen> {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
           child: Text(
             eta,
@@ -790,152 +837,143 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildServiceListCard(Service service, int index) {
-    final icons = [
-      Icons.electrical_services_rounded,
-      Icons.cleaning_services_rounded,
-      Icons.format_paint_rounded,
-      Icons.plumbing_rounded,
-      Icons.handyman_rounded,
-      Icons.home_repair_service_rounded,
-    ];
+  Widget _buildServiceListCard(Service service, int index, String categoryName) {
+    final color = _getCategoryColor(categoryName);
+    final icon = _getCategoryIcon(categoryName);
+    final iconColor = _getCategoryIconColor(categoryName);
     final discountPrice = (service.basePrice * 1.25).round();
 
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
-      child: Material(
-        color: Colors.white.withValues(alpha: 0.94),
-        borderRadius: BorderRadius.circular(18),
-        child: InkWell(
-          onTap: () => Navigator.pushNamed(
-            context,
-            '/service-detail',
-            arguments: service,
-          ),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
           borderRadius: BorderRadius.circular(18),
-          child: Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(
-                color: AppTheme.primary.withValues(alpha: 0.10),
-              ),
+          border: Border.all(color: AppTheme.primary.withValues(alpha: 0.05)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
-            child: Row(
-              children: [
-                Container(
-                  width: 58,
-                  height: 58,
-                  decoration: BoxDecoration(
-                    color: AppTheme.bgCardLight,
-                    borderRadius: BorderRadius.circular(16),
+          ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(18),
+          child: InkWell(
+            onTap: () => Navigator.pushNamed(
+              context,
+              '/service-detail',
+              arguments: service,
+            ),
+            borderRadius: BorderRadius.circular(18),
+            child: Padding(
+              padding: const EdgeInsets.all(14),
+              child: Row(
+                children: [
+                  Container(
+                    width: 58,
+                    height: 58,
+                    decoration: BoxDecoration(
+                      color: color,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Icon(icon, color: iconColor, size: 30),
                   ),
-                  child: Icon(
-                    icons[index % icons.length],
-                    color: AppTheme.primary,
-                    size: 30,
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          service.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.outfit(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            color: AppTheme.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '${service.duration} min · ${service.description}',
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.inter(
+                            fontSize: 13,
+                            color: AppTheme.textSecondary,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Row(
+                          children: [
+                            const Icon(Icons.schedule_rounded,
+                                size: 13, color: AppTheme.textMuted),
+                            const SizedBox(width: 4),
+                            Text(
+                              _bookNow ? 'Arrives in 6 min' : 'Choose slot',
+                              style: GoogleFonts.inter(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: AppTheme.textMuted,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  const SizedBox(width: 10),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
-                        service.name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                        '₹${service.basePrice.toInt()}',
                         style: GoogleFonts.outfit(
                           fontSize: 20,
                           fontWeight: FontWeight.w800,
-                          color: AppTheme.textPrimary,
+                          color: AppTheme.primary,
                         ),
                       ),
-                      const SizedBox(height: 5),
                       Text(
-                        '${service.duration} min · ${service.description}',
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
+                        '₹$discountPrice',
                         style: GoogleFonts.inter(
-                          fontSize: 14,
+                          fontSize: 13,
                           color: AppTheme.textSecondary,
+                          decoration: TextDecoration.lineThrough,
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.schedule_rounded,
-                            size: 15,
-                            color: AppTheme.textMuted,
-                          ),
-                          const SizedBox(width: 5),
-                          Text(
-                            _bookNow ? 'Arrives in 6 min' : 'Choose slot',
-                            style: GoogleFonts.inter(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: AppTheme.textMuted,
+                      const SizedBox(height: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 7, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: AppTheme.success,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.star_rounded,
+                                size: 12, color: Colors.white),
+                            const SizedBox(width: 3),
+                            Text(
+                              '4.8',
+                              style: GoogleFonts.inter(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w800,
+                                color: Colors.white,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ],
                   ),
-                ),
-                const SizedBox(width: 10),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      '₹${service.basePrice.toInt()}',
-                      style: GoogleFonts.outfit(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w800,
-                        color: AppTheme.textPrimary,
-                      ),
-                    ),
-                    Text(
-                      '₹$discountPrice',
-                      style: GoogleFonts.inter(
-                        fontSize: 15,
-                        color: AppTheme.textSecondary,
-                        decoration: TextDecoration.lineThrough,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppTheme.success,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(
-                            Icons.star_rounded,
-                            size: 14,
-                            color: Colors.white,
-                          ),
-                          const SizedBox(width: 3),
-                          Text(
-                            '4.8',
-                            style: GoogleFonts.inter(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w800,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -1104,6 +1142,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildProfileTab() {
     return SafeArea(
       child: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.all(20),
         child: Consumer<AuthProvider>(
           builder: (context, auth, _) {
@@ -1116,6 +1155,14 @@ class _HomeScreenState extends State<HomeScreen> {
                   decoration: BoxDecoration(
                     gradient: AppTheme.primaryGradient,
                     borderRadius: BorderRadius.circular(24),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppTheme.primary.withValues(alpha: 0.25),
+                        blurRadius: 20,
+                        offset: const Offset(0, 10),
+                      ),
+                    ],
+                    border: Border.all(color: Colors.white, width: 3),
                   ),
                   child: Center(
                     child: Text(
@@ -1150,25 +1197,116 @@ class _HomeScreenState extends State<HomeScreen> {
                   Icons.receipt_long_rounded,
                   'My Bookings',
                   () => Navigator.pushNamed(context, '/bookings'),
+                  iconBgColor: const Color(0xFFEFF7FF),
+                  iconColor: AppTheme.primary,
                 ),
-                _buildProfileOption(Icons.star_rounded, 'My Reviews', () {}),
-                _buildProfileOption(Icons.settings_rounded, 'Settings', () {}),
+                _buildProfileOption(
+                  Icons.star_rounded,
+                  'My Reviews',
+                  () {},
+                  iconBgColor: const Color(0xFFFFF0F7),
+                  iconColor: const Color(0xFFD81B60),
+                ),
+                _buildProfileOption(
+                  Icons.settings_rounded,
+                  'Settings',
+                  () {},
+                  iconBgColor: const Color(0xFFE8F5E9),
+                  iconColor: AppTheme.success,
+                ),
                 _buildProfileOption(
                   Icons.help_outline_rounded,
                   'Help & Support',
                   () {},
+                  iconBgColor: const Color(0xFFFFF3E0),
+                  iconColor: const Color(0xFFEF6C00),
                 ),
                 const SizedBox(height: 14),
-                _buildProfileOption(Icons.logout_rounded, 'Logout', () async {
-                  await auth.logout();
-                  if (context.mounted) {
-                    Navigator.pushReplacementNamed(context, '/login');
-                  }
-                }, isDestructive: true),
+                _buildProfileOption(
+                  Icons.logout_rounded,
+                  'Logout',
+                  () async {
+                    await auth.logout();
+                    if (context.mounted) {
+                      Navigator.pushReplacementNamed(context, '/login');
+                    }
+                  },
+                  isDestructive: true,
+                  iconBgColor: const Color(0xFFFFEBEE),
+                  iconColor: AppTheme.error,
+                ),
+                _buildSafetyBanner(),
+                const SizedBox(height: 100),
               ],
             );
           },
         ),
+      ),
+    );
+  }
+
+  Widget _buildSafetyBanner() {
+    return Container(
+      margin: const EdgeInsets.only(top: 24, bottom: 20),
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFEFF7FF),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppTheme.primary.withValues(alpha: 0.15)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: AppTheme.primary.withValues(alpha: 0.08),
+                  blurRadius: 8,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: const Icon(
+              Icons.shield_rounded,
+              color: AppTheme.primary,
+              size: 26,
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Your safety is our priority',
+                  style: GoogleFonts.outfit(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    color: AppTheme.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Verified professionals, background checks, & 24/7 assistance.',
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    color: AppTheme.textSecondary,
+                    height: 1.3,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 6),
+          const Icon(
+            Icons.check_circle_rounded,
+            color: AppTheme.success,
+            size: 20,
+          ),
+        ],
       ),
     );
   }
@@ -1178,34 +1316,65 @@ class _HomeScreenState extends State<HomeScreen> {
     String title,
     VoidCallback onTap, {
     bool isDestructive = false,
+    required Color iconBgColor,
+    required Color iconColor,
   }) {
-    return GlassCard(
-      onTap: onTap,
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 15),
-      child: Row(
-        children: [
-          Icon(
-            icon,
-            color: isDestructive ? AppTheme.error : AppTheme.primary,
-            size: 22,
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Text(
-              title,
-              style: GoogleFonts.inter(
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
-                color: isDestructive ? AppTheme.error : AppTheme.textPrimary,
-              ),
-            ),
-          ),
-          const Icon(
-            Icons.chevron_right_rounded,
-            color: AppTheme.textMuted,
-            size: 20,
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppTheme.primary.withValues(alpha: 0.05)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(20),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(20),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: iconBgColor,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Icon(
+                    icon,
+                    color: iconColor,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: GoogleFonts.inter(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: isDestructive ? AppTheme.error : AppTheme.textPrimary,
+                    ),
+                  ),
+                ),
+                const Icon(
+                  Icons.chevron_right_rounded,
+                  color: AppTheme.textMuted,
+                  size: 20,
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
