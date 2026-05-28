@@ -25,4 +25,15 @@ class PaymentApiService {
     }
     throw ApiException('Failed to verify payment status with server', 500);
   }
+
+  /// Record that the customer paid the worker in cash.
+  Future<Map<String, dynamic>> markCashPayment(String bookingId) async {
+    final response = await ApiClient.post(ApiConfig.payBookingCash(bookingId), {});
+    final data = response['data'];
+
+    if (data != null && data['booking'] != null) {
+      return Map<String, dynamic>.from(data['booking']);
+    }
+    throw ApiException('Failed to record cash payment', 500);
+  }
 }

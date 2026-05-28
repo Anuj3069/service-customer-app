@@ -140,6 +140,37 @@ class _PaymentScreenState extends State<PaymentScreen> {
     }
   }
 
+  Future<void> _markPaidByCash() async {
+    if (_booking == null) return;
+
+    setState(() {
+      _isProcessing = true;
+      _errorMessage = null;
+    });
+
+    try {
+      await _paymentApiService.markCashPayment(_booking!.id);
+      if (mounted) {
+        Navigator.pushReplacementNamed(
+          context,
+          '/payment-result',
+          arguments: {
+            'booking': _booking,
+            'success': true,
+            'message': 'Cash payment recorded successfully!',
+          },
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isProcessing = false;
+          _errorMessage = e.toString().replaceAll('ApiException: ', '');
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final booking = _booking;
@@ -329,10 +360,37 @@ class _PaymentScreenState extends State<PaymentScreen> {
                           ),
                         )
                       else
-                        GradientButton(
-                          text: 'Pay Now (₹${booking.price.toInt()})',
-                          icon: Icons.payment_rounded,
-                          onPressed: _startPaymentFlow,
+                        Column(
+                          children: [
+                            GradientButton(
+                              text: 'Pay Online (₹${booking.price.toInt()})',
+                              icon: Icons.payment_rounded,
+                              onPressed: _startPaymentFlow,
+                            ),
+                            const SizedBox(height: 12),
+                            SizedBox(
+                              width: double.infinity,
+                              height: 52,
+                              child: OutlinedButton.icon(
+                                onPressed: _markPaidByCash,
+                                icon: const Icon(Icons.payments_rounded),
+                                label: Text(
+                                  'Paid by Cash',
+                                  style: GoogleFonts.outfit(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: AppTheme.success,
+                                  side: const BorderSide(color: AppTheme.success),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                     ],
                   ),

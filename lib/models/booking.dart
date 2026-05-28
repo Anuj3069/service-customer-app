@@ -17,6 +17,8 @@ class Booking {
   final String? cancellationReason;
   final String createdAt;
   final String paymentStatus;
+  final String? paymentMethod;
+  final String? paidAt;
   final Map<String, dynamic>? serviceDetails;
   final Map<String, dynamic>? providerDetails;
   final List<double>? workerLocationCoordinates;
@@ -40,6 +42,8 @@ class Booking {
     this.cancellationReason,
     required this.createdAt,
     this.paymentStatus = 'unpaid',
+    this.paymentMethod,
+    this.paidAt,
     this.serviceDetails,
     this.providerDetails,
     this.workerLocationCoordinates,
@@ -78,6 +82,8 @@ class Booking {
       cancellationReason: json['cancellationReason'],
       createdAt: json['createdAt'] ?? '',
       paymentStatus: json['paymentStatus'] ?? 'unpaid',
+      paymentMethod: json['paymentMethod'],
+      paidAt: json['paidAt'],
       serviceDetails: json['serviceId'] is Map ? json['serviceId'] : null,
       providerDetails: json['providerId'] is Map ? json['providerId'] : null,
       workerLocationCoordinates: coords,
