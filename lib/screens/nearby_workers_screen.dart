@@ -31,17 +31,19 @@ class _NearbyWorkersScreenState extends State<NearbyWorkersScreen> {
   int _selectedWorkerIndex = 0;
   Timer? _refreshTimer;
 
-  // Fallback to Kolkata coordinates if GPS is unavailable
-  final LatLng _fallbackCenter = const LatLng(22.5726, 88.3639);
-
   @override
   void initState() {
     super.initState();
     _initLocationAndWorkers();
-    
+
     // Auto-refresh nearby workers every 30 seconds
     _refreshTimer = Timer.periodic(const Duration(seconds: 30), (_) {
-      if (!mounted || _isLoadingWorkers || _currentPosition == null || _category == null) return;
+      if (!mounted ||
+          _isLoadingWorkers ||
+          _currentPosition == null ||
+          _category == null) {
+        return;
+      }
       _fetchWorkers();
     });
   }
@@ -64,29 +66,20 @@ class _NearbyWorkersScreenState extends State<NearbyWorkersScreen> {
       if (position != null) {
         _currentPosition = position;
       } else {
-        // Use fallback if permission denied / services disabled
-        _currentPosition = Position(
-          latitude: _fallbackCenter.latitude,
-          longitude: _fallbackCenter.longitude,
-          timestamp: DateTime.now(),
-          accuracy: 0.0,
-          altitude: 0.0,
-          altitudeAccuracy: 0.0,
-          heading: 0.0,
-          headingAccuracy: 0.0,
-          speed: 0.0,
-          speedAccuracy: 0.0,
-        );
+        _errorMessage =
+            'Location access is required to show nearby pros. Please enable location services and grant permission.';
       }
     } catch (e) {
-      _errorMessage = 'Could not retrieve location. Please check your settings.';
+      _errorMessage =
+          'Could not retrieve location. Please check your settings.';
     } finally {
       if (mounted) {
         setState(() {
           _isLoadingLocation = false;
         });
-        // Now fetch workers
-        _fetchWorkers();
+        if (_currentPosition != null) {
+          _fetchWorkers();
+        }
       }
     }
   }
@@ -154,26 +147,21 @@ class _NearbyWorkersScreenState extends State<NearbyWorkersScreen> {
     }
 
     if (_category == null) {
-      return const Scaffold(
-        body: Center(child: Text('Invalid Category')),
-      );
+      return const Scaffold(body: Center(child: Text('Invalid Category')));
     }
 
     return Scaffold(
       body: Stack(
         children: [
-          // 1. The Map View
+          // 1. The Map View / Error state
           _isLoadingLocation
               ? _buildLoadingState()
-              : _buildMapContent(),
+              : (_currentPosition == null
+                    ? _buildLocationErrorState()
+                    : _buildMapContent()),
 
           // 2. Custom App Bar overlay
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: _buildHeaderOverlay(),
-          ),
+          Positioned(top: 0, left: 0, right: 0, child: _buildHeaderOverlay()),
 
           // 3. Floating Quick Info badges
           if (!_isLoadingLocation && !_isLoadingWorkers && _workers.isNotEmpty)
@@ -205,7 +193,10 @@ class _NearbyWorkersScreenState extends State<NearbyWorkersScreen> {
             ),
 
           // 5. Empty State or Error Banner
-          if (!_isLoadingLocation && (_workers.isEmpty || _errorMessage != null) && !_isLoadingWorkers)
+          if (!_isLoadingLocation &&
+              _currentPosition != null &&
+              (_workers.isEmpty || _errorMessage != null) &&
+              !_isLoadingWorkers)
             Positioned(
               bottom: 24,
               left: 20,
@@ -239,7 +230,9 @@ class _NearbyWorkersScreenState extends State<NearbyWorkersScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primary)),
+            const CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primary),
+            ),
             const SizedBox(height: 20),
             Text(
               'Locating nearby pros...',
@@ -255,10 +248,69 @@ class _NearbyWorkersScreenState extends State<NearbyWorkersScreen> {
     );
   }
 
+  Widget _buildLocationErrorState() {
+    return Container(
+      decoration: const BoxDecoration(gradient: AppTheme.bgGradient),
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Icon(Icons.location_off_rounded, size: 72, color: AppTheme.error),
+            const SizedBox(height: 20),
+            Text(
+              'Location Required',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.outfit(
+                fontSize: 22,
+                fontWeight: FontWeight.w800,
+                color: AppTheme.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              _errorMessage ??
+                  'Please enable location services to see nearby professionals.',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                color: AppTheme.textSecondary,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: _initLocationAndWorkers,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primary,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 14,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+              child: Text(
+                'Retry location',
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildMapContent() {
     final customerLatLng = LatLng(
-      _currentPosition?.latitude ?? _fallbackCenter.latitude,
-      _currentPosition?.longitude ?? _fallbackCenter.longitude,
+      _currentPosition!.latitude,
+      _currentPosition!.longitude,
     );
 
     // Prepare list of markers
@@ -320,7 +372,9 @@ class _NearbyWorkersScreenState extends State<NearbyWorkersScreen> {
                   width: isSelected ? 48 : 36,
                   height: isSelected ? 48 : 36,
                   decoration: BoxDecoration(
-                    color: AppTheme.success.withValues(alpha: isSelected ? 0.3 : 0.15),
+                    color: AppTheme.success.withValues(
+                      alpha: isSelected ? 0.3 : 0.15,
+                    ),
                     shape: BoxShape.circle,
                   ),
                 ),
@@ -405,7 +459,10 @@ class _NearbyWorkersScreenState extends State<NearbyWorkersScreen> {
               child: const SizedBox(
                 width: 44,
                 height: 44,
-                child: Icon(Icons.arrow_back_rounded, color: AppTheme.textPrimary),
+                child: Icon(
+                  Icons.arrow_back_rounded,
+                  color: AppTheme.textPrimary,
+                ),
               ),
             ),
           ),
@@ -555,7 +612,11 @@ class _NearbyWorkersScreenState extends State<NearbyWorkersScreen> {
                 const SizedBox(height: 4),
                 Row(
                   children: [
-                    const Icon(Icons.star_rounded, color: AppTheme.warning, size: 16),
+                    const Icon(
+                      Icons.star_rounded,
+                      color: AppTheme.warning,
+                      size: 16,
+                    ),
                     const SizedBox(width: 3),
                     Text(
                       '${worker.rating.toStringAsFixed(1)} ',
@@ -577,7 +638,11 @@ class _NearbyWorkersScreenState extends State<NearbyWorkersScreen> {
                 const SizedBox(height: 4),
                 Row(
                   children: [
-                    const Icon(Icons.location_on_rounded, color: AppTheme.primary, size: 14),
+                    const Icon(
+                      Icons.location_on_rounded,
+                      color: AppTheme.primary,
+                      size: 14,
+                    ),
                     const SizedBox(width: 3),
                     Text(
                       '${worker.distance.toStringAsFixed(2)} km away',
@@ -602,7 +667,10 @@ class _NearbyWorkersScreenState extends State<NearbyWorkersScreen> {
                 onPressed: () => _showServiceSelectionModal(worker),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppTheme.primary,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 10,
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),
                   ),
@@ -641,13 +709,17 @@ class _NearbyWorkersScreenState extends State<NearbyWorkersScreen> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
-            _errorMessage != null ? Icons.error_outline_rounded : Icons.location_off_rounded,
+            _errorMessage != null
+                ? Icons.error_outline_rounded
+                : Icons.location_off_rounded,
             color: _errorMessage != null ? AppTheme.error : AppTheme.textMuted,
             size: 48,
           ),
           const SizedBox(height: 12),
           Text(
-            _errorMessage != null ? 'Error Loading Pros' : 'No Active Pros Nearby',
+            _errorMessage != null
+                ? 'Error Loading Pros'
+                : 'No Active Pros Nearby',
             style: GoogleFonts.outfit(
               fontSize: 18,
               fontWeight: FontWeight.w800,
@@ -656,7 +728,8 @@ class _NearbyWorkersScreenState extends State<NearbyWorkersScreen> {
           ),
           const SizedBox(height: 6),
           Text(
-            _errorMessage ?? 'Currently there are no active service providers online in this area. Please try again later.',
+            _errorMessage ??
+                'Currently there are no active service providers online in this area. Please try again later.',
             textAlign: TextAlign.center,
             style: GoogleFonts.inter(
               fontSize: 13,
@@ -738,7 +811,10 @@ class _NearbyWorkersScreenState extends State<NearbyWorkersScreen> {
                         ),
                       ),
                       child: ListTile(
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 6,
+                        ),
                         title: Text(
                           service.name,
                           style: GoogleFonts.outfit(

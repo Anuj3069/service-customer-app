@@ -35,21 +35,41 @@ class _HomeScreenState extends State<HomeScreen> {
 
   IconData _getCategoryIcon(String name) {
     final cleanName = name.toLowerCase();
-    if (cleanName.contains('plumbing')) return Icons.plumbing_rounded;
-    if (cleanName.contains('cleaning')) return Icons.cleaning_services_rounded;
-    if (cleanName.contains('electric')) return Icons.electrical_services_rounded;
-    if (cleanName.contains('paint')) return Icons.format_paint_rounded;
-    if (cleanName.contains('handyman')) return Icons.handyman_rounded;
+    if (cleanName.contains('plumbing')) {
+      return Icons.plumbing_rounded;
+    }
+    if (cleanName.contains('cleaning')) {
+      return Icons.cleaning_services_rounded;
+    }
+    if (cleanName.contains('electric')) {
+      return Icons.electrical_services_rounded;
+    }
+    if (cleanName.contains('paint')) {
+      return Icons.format_paint_rounded;
+    }
+    if (cleanName.contains('handyman')) {
+      return Icons.handyman_rounded;
+    }
     return Icons.home_repair_service_rounded;
   }
 
   Color _getCategoryColor(String name) {
     final cleanName = name.toLowerCase();
-    if (cleanName.contains('plumbing')) return const Color(0xFFEFF7FF);
-    if (cleanName.contains('cleaning')) return const Color(0xFFF0EDFF);
-    if (cleanName.contains('electric')) return const Color(0xFFFFF4E1);
-    if (cleanName.contains('paint')) return const Color(0xFFFFF0F7);
-    if (cleanName.contains('handyman')) return const Color(0xFFFFF1E9);
+    if (cleanName.contains('plumbing')) {
+      return const Color(0xFFEFF7FF);
+    }
+    if (cleanName.contains('cleaning')) {
+      return const Color(0xFFF0EDFF);
+    }
+    if (cleanName.contains('electric')) {
+      return const Color(0xFFFFF4E1);
+    }
+    if (cleanName.contains('paint')) {
+      return const Color(0xFFFFF0F7);
+    }
+    if (cleanName.contains('handyman')) {
+      return const Color(0xFFFFF1E9);
+    }
     return const Color(0xFFF1F6FF);
   }
 
@@ -136,9 +156,8 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           // Connection status banner (Redis socket state)
           Consumer<BookingProvider>(
-            builder: (_, bp, __) => ConnectionBanner(
-              isConnected: bp.isSocketConnected,
-            ),
+            builder: (_, bp, __) =>
+                ConnectionBanner(isConnected: bp.isSocketConnected),
           ),
           Expanded(
             child: SingleChildScrollView(
@@ -236,18 +255,15 @@ class _HomeScreenState extends State<HomeScreen> {
         return Stack(
           clipBehavior: Clip.none,
           children: [
-            _roundIcon(
-              Icons.notifications_none_rounded,
-              () {
-                NotificationPanel.show(
-                  context,
-                  notifications: bp.realtimeNotifications,
-                  unreadCount: unread,
-                  onClear: () => bp.clearNotifications(),
-                  onMarkRead: (index) => bp.markNotificationRead(index),
-                );
-              },
-            ),
+            _roundIcon(Icons.notifications_none_rounded, () {
+              NotificationPanel.show(
+                context,
+                notifications: bp.realtimeNotifications,
+                unreadCount: unread,
+                onClear: () => bp.clearNotifications(),
+                onMarkRead: (index) => bp.markNotificationRead(index),
+              );
+            }),
             if (unread > 0)
               Positioned(
                 right: -2,
@@ -630,7 +646,8 @@ class _HomeScreenState extends State<HomeScreen> {
           _buildCategoryMapPreview(category),
           const SizedBox(height: 16),
           ...category.services.asMap().entries.map(
-            (entry) => _buildServiceListCard(entry.value, entry.key, category.name),
+            (entry) =>
+                _buildServiceListCard(entry.value, entry.key, category.name),
           ),
         ],
       ),
@@ -640,11 +657,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildCategoryMapPreview(Category category) {
     return GestureDetector(
       onTap: () {
-        Navigator.pushNamed(
-          context,
-          '/nearby-workers',
-          arguments: category,
-        );
+        Navigator.pushNamed(context, '/nearby-workers', arguments: category);
       },
       child: Container(
         height: 190,
@@ -663,14 +676,14 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         child: Stack(
           children: [
-            Positioned.fill(child: CustomPaint(painter: _HardcodedMapPainter())),
+            Positioned.fill(child: CustomPaint(painter: _MapPreviewPainter())),
             Positioned(
               left: 16,
               top: 16,
               child: _mapChip(
                 icon: Icons.location_on_rounded,
-                label: 'Kolkata',
-                color: AppTheme.error,
+                label: 'Your area',
+                color: AppTheme.primary,
               ),
             ),
             Positioned(
@@ -715,7 +728,10 @@ class _HomeScreenState extends State<HomeScreen> {
               bottom: 12,
               right: 12,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: AppTheme.primary,
                   borderRadius: BorderRadius.circular(12),
@@ -730,7 +746,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.map_rounded, color: Colors.white, size: 14),
+                    const Icon(
+                      Icons.map_rounded,
+                      color: Colors.white,
+                      size: 14,
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       'View Live Map',
@@ -837,7 +857,11 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildServiceListCard(Service service, int index, String categoryName) {
+  Widget _buildServiceListCard(
+    Service service,
+    int index,
+    String categoryName,
+  ) {
     final color = _getCategoryColor(categoryName);
     final icon = _getCategoryIcon(categoryName);
     final iconColor = _getCategoryIconColor(categoryName);
@@ -909,8 +933,11 @@ class _HomeScreenState extends State<HomeScreen> {
                         const SizedBox(height: 6),
                         Row(
                           children: [
-                            const Icon(Icons.schedule_rounded,
-                                size: 13, color: AppTheme.textMuted),
+                            const Icon(
+                              Icons.schedule_rounded,
+                              size: 13,
+                              color: AppTheme.textMuted,
+                            ),
                             const SizedBox(width: 4),
                             Text(
                               _bookNow ? 'Arrives in 6 min' : 'Choose slot',
@@ -948,7 +975,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       const SizedBox(height: 6),
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 7, vertical: 3),
+                          horizontal: 7,
+                          vertical: 3,
+                        ),
                         decoration: BoxDecoration(
                           color: AppTheme.success,
                           borderRadius: BorderRadius.circular(8),
@@ -956,8 +985,11 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(Icons.star_rounded,
-                                size: 12, color: Colors.white),
+                            const Icon(
+                              Icons.star_rounded,
+                              size: 12,
+                              color: Colors.white,
+                            ),
                             const SizedBox(width: 3),
                             Text(
                               '4.8',
@@ -1349,11 +1381,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     color: iconBgColor,
                     borderRadius: BorderRadius.circular(14),
                   ),
-                  child: Icon(
-                    icon,
-                    color: iconColor,
-                    size: 20,
-                  ),
+                  child: Icon(icon, color: iconColor, size: 20),
                 ),
                 const SizedBox(width: 14),
                 Expanded(
@@ -1362,7 +1390,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     style: GoogleFonts.inter(
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
-                      color: isDestructive ? AppTheme.error : AppTheme.textPrimary,
+                      color: isDestructive
+                          ? AppTheme.error
+                          : AppTheme.textPrimary,
                     ),
                   ),
                 ),
@@ -1396,7 +1426,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-class _HardcodedMapPainter extends CustomPainter {
+class _MapPreviewPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final land = Paint()..color = const Color(0xFFE9EEF8);
