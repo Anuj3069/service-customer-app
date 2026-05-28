@@ -19,6 +19,8 @@ import 'screens/instant_booking_screen.dart';
 import 'screens/live_tracking_screen.dart';
 import 'screens/nearby_workers_screen.dart';
 import 'screens/chat_screen.dart';
+import 'screens/payment_screen.dart';
+import 'screens/payment_result_screen.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -64,6 +66,8 @@ class AirveatCustomerApp extends StatelessWidget {
           '/live-tracking': (context) => const LiveTrackingScreen(),
           '/nearby-workers': (context) => const NearbyWorkersScreen(),
           '/chat': (context) => const ChatScreen(),
+          '/payment': (context) => const PaymentScreen(),
+          '/payment-result': (context) => const PaymentResultScreen(),
         },
       ),
     );

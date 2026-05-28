@@ -44,6 +44,7 @@ class BookingProvider extends ChangeNotifier {
   StreamSubscription? _connectionSub;
   StreamSubscription? _trackingStartedSub;
   StreamSubscription? _workerLocationSub;
+  StreamSubscription? _paidSub;
 
   List<Booking> get bookings => _bookings;
   Booking? get selectedBooking => _selectedBooking;
@@ -89,6 +90,7 @@ class BookingProvider extends ChangeNotifier {
     _connectionSub?.cancel();
     _trackingStartedSub?.cancel();
     _workerLocationSub?.cancel();
+    _paidSub?.cancel();
     _socketService.disconnect();
     _isSocketConnected = false;
     _realtimeNotifications.clear();
@@ -105,6 +107,7 @@ class BookingProvider extends ChangeNotifier {
     _connectionSub?.cancel();
     _trackingStartedSub?.cancel();
     _workerLocationSub?.cancel();
+    _paidSub?.cancel();
 
     // ── Connection state tracking ──
     _connectionSub = _socketService.onConnectionStateChanged.listen((connected) {
@@ -228,7 +231,26 @@ class BookingProvider extends ChangeNotifier {
           ? data['timestamp']
           : DateTime.now().millisecondsSinceEpoch;
       _trackingBookingId = data['bookingId']?.toString() ?? _trackingBookingId;
-
+ 
+      notifyListeners();
+    });
+ 
+    // ── Payment confirmed ──
+    _paidSub = _socketService.onBookingPaid.listen((data) {
+      debugPrint('[BookingProvider] 💳 booking-paid: $data');
+ 
+      _addNotification(
+        type: 'paid',
+        title: 'Payment Successful!',
+        message: 'Your payment has been successfully verified.',
+        data: data,
+      );
+ 
+      // Auto-refresh booking list and active selected booking
+      fetchBookings();
+      if (_selectedBooking != null && _selectedBooking!.id == data['bookingId']) {
+        fetchBookingById(_selectedBooking!.id);
+      }
       notifyListeners();
     });
   }
@@ -537,6 +559,7 @@ class BookingProvider extends ChangeNotifier {
     _connectionSub?.cancel();
     _trackingStartedSub?.cancel();
     _workerLocationSub?.cancel();
+    _paidSub?.cancel();
     _socketService.dispose();
     super.dispose();
   }

@@ -28,4 +28,8 @@ class ApiConfig {
 
   // Nearby Workers
   static const String nearbyWorkers = '/user/nearby-workers';
+
+  // Payments
+  static String payBooking(String id) => '/user/bookings/$id/pay';
+  static String verifyPayment(String id) => '/payments/$id/verify';
 }

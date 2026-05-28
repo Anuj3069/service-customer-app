@@ -254,6 +254,44 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                             _detailRow('Time Slot', booking.slot ?? 'Now'),
                             _detailRow(
                                 'Price', '₹${booking.price.toInt()}'),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    'Payment Status',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 14,
+                                      color: AppTheme.textMuted,
+                                    ),
+                                  ),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: booking.paymentStatus == 'paid'
+                                          ? AppTheme.success.withValues(alpha: 0.1)
+                                          : (booking.paymentStatus == 'pending'
+                                              ? AppTheme.warning.withValues(alpha: 0.1)
+                                              : AppTheme.error.withValues(alpha: 0.1)),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Text(
+                                      booking.paymentStatus.toUpperCase(),
+                                      style: GoogleFonts.inter(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                        color: booking.paymentStatus == 'paid'
+                                            ? AppTheme.success
+                                            : (booking.paymentStatus == 'pending'
+                                                ? AppTheme.warning
+                                                : AppTheme.error),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -514,19 +552,92 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                         const SizedBox(height: 16),
                       ],
 
-                      // Review button for completed bookings
-                      if (booking.status == 'completed')
-                        GradientButton(
-                          text: 'Write a Review',
-                          icon: Icons.star_rounded,
-                          onPressed: () {
-                            Navigator.pushNamed(
-                              context,
-                              '/review',
-                              arguments: booking,
-                            );
-                          },
-                        ),
+                      // Review / Payment button for completed bookings
+                      if (booking.status == 'completed') ...[
+                        if (booking.paymentStatus == 'paid') ...[
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            margin: const EdgeInsets.only(bottom: 16),
+                            decoration: BoxDecoration(
+                              color: AppTheme.success.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(
+                                color: AppTheme.success.withValues(alpha: 0.3),
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.check_circle_rounded, color: AppTheme.success, size: 20),
+                                const SizedBox(width: 10),
+                                Text(
+                                  'Payment completed successfully!',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppTheme.success,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          GradientButton(
+                            text: 'Write a Review',
+                            icon: Icons.star_rounded,
+                            onPressed: () {
+                              Navigator.pushNamed(
+                                context,
+                                '/review',
+                                arguments: booking,
+                              );
+                            },
+                          ),
+                        ] else ...[
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            margin: const EdgeInsets.only(bottom: 16),
+                            decoration: BoxDecoration(
+                              color: AppTheme.warning.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(
+                                color: AppTheme.warning.withValues(alpha: 0.3),
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.payment_rounded, color: AppTheme.warning, size: 20),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    booking.paymentStatus == 'pending'
+                                        ? 'Payment is pending verification...'
+                                        : 'Payment is required to complete transaction.',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppTheme.warning,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          GradientButton(
+                            text: 'Pay Booking (₹${booking.price.toInt()})',
+                            icon: Icons.payment_rounded,
+                            onPressed: () {
+                              Navigator.pushNamed(
+                                context,
+                                '/payment',
+                                arguments: booking,
+                              ).then((_) {
+                                _refreshBooking();
+                              });
+                            },
+                          ),
+                        ],
+                      ],
                       const SizedBox(height: 40),
                     ],
                   ),
