@@ -34,6 +34,7 @@ class BookingProvider extends ChangeNotifier {
 
   // ── Real-time notification state ───────────────────
   bool _isSocketConnected = false;
+  bool _refreshOnReconnect = false;
   List<Map<String, dynamic>> _realtimeNotifications = [];
 
   StreamSubscription? _confirmedSub;
@@ -58,7 +59,8 @@ class BookingProvider extends ChangeNotifier {
   Map<String, dynamic>? get confirmedProvider => _confirmedProvider;
   SocketService get socketService => _socketService;
   bool get isSocketConnected => _isSocketConnected;
-  List<Map<String, dynamic>> get realtimeNotifications => _realtimeNotifications;
+  List<Map<String, dynamic>> get realtimeNotifications =>
+      _realtimeNotifications;
 
   // ── Live Tracking Getters ──
   bool get isTracking => _isTracking;
@@ -110,8 +112,23 @@ class BookingProvider extends ChangeNotifier {
     _paidSub?.cancel();
 
     // ── Connection state tracking ──
-    _connectionSub = _socketService.onConnectionStateChanged.listen((connected) {
+    _connectionSub = _socketService.onConnectionStateChanged.listen((
+      connected,
+    ) {
       _isSocketConnected = connected;
+
+      if (connected && _refreshOnReconnect) {
+        _refreshOnReconnect = false;
+        fetchBookings();
+        if (_selectedBooking != null) {
+          fetchBookingById(_selectedBooking!.id);
+        }
+      }
+
+      if (!connected) {
+        _refreshOnReconnect = true;
+      }
+
       notifyListeners();
     });
 
@@ -137,11 +154,15 @@ class BookingProvider extends ChangeNotifier {
     _expiredSub = _socketService.onBookingExpired.listen((data) {
       debugPrint('[BookingProvider] ⏰ booking-expired: $data');
       _instantStatus = 'expired';
+      if (_instantBooking?.id == data['bookingId']?.toString()) {
+        _instantBooking = null;
+      }
 
       _addNotification(
         type: 'expired',
         title: 'Booking Expired',
-        message: data['message'] ?? 'No providers accepted your request in time.',
+        message:
+            data['message'] ?? 'No providers accepted your request in time.',
         data: data,
       );
 
@@ -173,7 +194,8 @@ class BookingProvider extends ChangeNotifier {
       _addNotification(
         type: 'rejected',
         title: 'Booking Rejected',
-        message: 'Your booking has been rejected by the provider. Please try again.',
+        message:
+            'Your booking has been rejected by the provider. Please try again.',
         data: data,
       );
 
@@ -231,24 +253,25 @@ class BookingProvider extends ChangeNotifier {
           ? data['timestamp']
           : DateTime.now().millisecondsSinceEpoch;
       _trackingBookingId = data['bookingId']?.toString() ?? _trackingBookingId;
- 
+
       notifyListeners();
     });
- 
+
     // ── Payment confirmed ──
     _paidSub = _socketService.onBookingPaid.listen((data) {
       debugPrint('[BookingProvider] 💳 booking-paid: $data');
- 
+
       _addNotification(
         type: 'paid',
         title: 'Payment Successful!',
         message: 'Your payment has been successfully verified.',
         data: data,
       );
- 
+
       // Auto-refresh booking list and active selected booking
       fetchBookings();
-      if (_selectedBooking != null && _selectedBooking!.id == data['bookingId']) {
+      if (_selectedBooking != null &&
+          _selectedBooking!.id == data['bookingId']) {
         fetchBookingById(_selectedBooking!.id);
       }
       notifyListeners();

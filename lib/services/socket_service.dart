@@ -89,24 +89,30 @@ class SocketService {
 
     // ── Connection lifecycle ──
     _socket!.onConnect((_) {
-      debugPrint('[Socket] ✅ Connected: ${_socket!.id}');
+      if (kDebugMode) debugPrint('[Socket] ✅ Connected: ${_socket!.id}');
       _isConnected = true;
       _reconnectAttempts = 0;
       _connectionStateController.add(true);
 
       // CRITICAL: Register user → backend stores in Redis HASH
       _socket!.emit('register', {'userId': userId});
-      debugPrint('[Socket] 📡 Registered userId: $userId (Redis-backed)');
+      if (kDebugMode) {
+        debugPrint('[Socket] 📡 Registered userId: $userId (Redis-backed)');
+      }
     });
 
     _socket!.onDisconnect((_) {
-      debugPrint('[Socket] 🔌 Disconnected');
+      if (kDebugMode) {
+        debugPrint('[Socket] 🔌 Disconnected');
+      }
       _isConnected = false;
       _connectionStateController.add(false);
     });
 
     _socket!.onReconnect((_) {
-      debugPrint('[Socket] 🔄 Reconnected');
+      if (kDebugMode) {
+        debugPrint('[Socket] 🔄 Reconnected');
+      }
       _reconnectAttempts = 0;
       // Re-register on reconnect so Redis mapping is refreshed
       _socket!.emit('register', {'userId': userId});
@@ -114,52 +120,62 @@ class SocketService {
 
     _socket!.onReconnectAttempt((attempt) {
       _reconnectAttempts = attempt is int ? attempt : 0;
-      debugPrint('[Socket] 🔄 Reconnect attempt: $_reconnectAttempts');
+      if (kDebugMode) {
+        debugPrint('[Socket] 🔄 Reconnect attempt: $_reconnectAttempts');
+      }
     });
 
     _socket!.onReconnectFailed((_) {
-      debugPrint('[Socket] ❌ Reconnection failed after $_maxReconnectAttempts attempts');
+      if (kDebugMode) {
+        debugPrint(
+          '[Socket] ❌ Reconnection failed after $_maxReconnectAttempts attempts',
+        );
+      }
     });
 
     _socket!.onConnectError((err) {
-      debugPrint('[Socket] ❌ Connect error: $err');
+      if (kDebugMode) {
+        debugPrint('[Socket] ❌ Connect error: $err');
+      }
       _isConnected = false;
       _connectionStateController.add(false);
     });
 
     _socket!.onError((err) {
-      debugPrint('[Socket] ❌ Socket error: $err');
+      if (kDebugMode) {
+        debugPrint('[Socket] ❌ Socket error: $err');
+      }
     });
 
     // ── Booking events (routed from Redis Pub/Sub → Socket.IO) ──
 
     // Instant booking confirmed by a worker
     _socket!.on('booking-confirmed', (data) {
-      debugPrint('[Socket] 🎉 booking-confirmed: $data');
+      if (kDebugMode) debugPrint('[Socket] 🎉 booking-confirmed: $data');
       _addToController(_bookingConfirmedController, data);
     });
 
     // Booking expired (Redis TTL keyspace notification)
     _socket!.on('booking-expired', (data) {
-      debugPrint('[Socket] ⏰ booking-expired: $data');
+      if (kDebugMode) debugPrint('[Socket] ⏰ booking-expired: $data');
       _addToController(_bookingExpiredController, data);
     });
 
     // Scheduled booking accepted by worker
     _socket!.on('booking-accepted', (data) {
-      debugPrint('[Socket] ✅ booking-accepted: $data');
+      if (kDebugMode) debugPrint('[Socket] ✅ booking-accepted: $data');
       _addToController(_bookingAcceptedController, data);
     });
 
     // Scheduled booking rejected by worker
     _socket!.on('booking-rejected', (data) {
-      debugPrint('[Socket] ❌ booking-rejected: $data');
+      if (kDebugMode) debugPrint('[Socket] ❌ booking-rejected: $data');
       _addToController(_bookingRejectedController, data);
     });
 
     // Booking completed by worker
     _socket!.on('booking-completed', (data) {
-      debugPrint('[Socket] 🎉 booking-completed: $data');
+      if (kDebugMode) debugPrint('[Socket] 🎉 booking-completed: $data');
       _addToController(_bookingCompletedController, data);
     });
 
@@ -167,23 +183,23 @@ class SocketService {
 
     // Worker has started driving to customer
     _socket!.on('tracking-started', (data) {
-      debugPrint('[Socket] 📍 tracking-started: $data');
+      if (kDebugMode) debugPrint('[Socket] 📍 tracking-started: $data');
       _addToController(_trackingStartedController, data);
     });
 
     // Worker's live GPS location update
     _socket!.on('worker-location', (data) {
-      debugPrint('[Socket] 🗺️ worker-location: $data');
+      if (kDebugMode) debugPrint('[Socket] 🗺️ worker-location: $data');
       _addToController(_workerLocationController, data);
     });
 
     _socket!.on('chat-message', (data) {
-      debugPrint('[Socket] chat-message: $data');
+      if (kDebugMode) debugPrint('[Socket] chat-message: $data');
       _addToController(_chatMessageController, data);
     });
 
     _socket!.on('booking-paid', (data) {
-      debugPrint('[Socket] 💳 booking-paid: $data');
+      if (kDebugMode) debugPrint('[Socket] 💳 booking-paid: $data');
       _addToController(_bookingPaidController, data);
     });
 
