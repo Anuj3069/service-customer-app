@@ -18,6 +18,7 @@ class ApiConfig {
   static const String bookings = '/user/bookings';
   static String bookingById(String id) => '/user/bookings/$id';
   static String bookingOtp(String id) => '/user/bookings/$id/otp';
+  static String bookingChat(String id) => '/user/bookings/$id/chat';
 
   // Instant Booking
   static const String instantBooking = '/user/instant-booking';
@@ -27,4 +28,9 @@ class ApiConfig {
 
   // Nearby Workers
   static const String nearbyWorkers = '/user/nearby-workers';
+
+  // Payments
+  static String payBooking(String id) => '/user/bookings/$id/pay';
+  static String payBookingCash(String id) => '/user/bookings/$id/pay-cash';
+  static String verifyPayment(String id) => '/payments/$id/verify';
 }

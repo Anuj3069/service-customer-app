@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:flutter/material.dart';
 import '../config/api_config.dart';
 import '../main.dart';
 
@@ -12,7 +11,10 @@ class ApiClient {
   static const String _userKey = 'user_data';
 
   // ── Token Management ─────────────────────────────
-  static Future<void> saveTokens(String accessToken, String refreshToken) async {
+  static Future<void> saveTokens(
+    String accessToken,
+    String refreshToken,
+  ) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_tokenKey, accessToken);
     await prefs.setString(_refreshKey, refreshToken);
@@ -84,9 +86,7 @@ class ApiClient {
 
   // ── HTTP Helpers ──────────────────────────────────
   static Future<Map<String, String>> _headers({bool auth = true}) async {
-    final headers = <String, String>{
-      'Content-Type': 'application/json',
-    };
+    final headers = <String, String>{'Content-Type': 'application/json'};
     if (auth) {
       final token = await getAccessToken();
       if (token != null) {
@@ -96,19 +96,26 @@ class ApiClient {
     return headers;
   }
 
-  static Future<Map<String, dynamic>> get(String endpoint, {bool auth = true}) async {
+  static Future<Map<String, dynamic>> get(
+    String endpoint, {
+    bool auth = true,
+  }) async {
     final url = Uri.parse('${ApiConfig.baseUrl}$endpoint');
-    var headers = await _headers(auth: auth);
-    var response = await http.get(url, headers: headers);
-    
-    if (response.statusCode == 401 && auth) {
-      final refreshed = await _attemptRefresh();
-      if (refreshed) {
-        headers = await _headers(auth: auth);
-        response = await http.get(url, headers: headers);
+    try {
+      var headers = await _headers(auth: auth);
+      var response = await http.get(url, headers: headers);
+
+      if (response.statusCode == 401 && auth) {
+        final refreshed = await _attemptRefresh();
+        if (refreshed) {
+          headers = await _headers(auth: auth);
+          response = await http.get(url, headers: headers);
+        }
       }
+      return _handleResponse(response);
+    } catch (err) {
+      throw ApiException('Network error. Please check your connection.', 0);
     }
-    return _handleResponse(response);
   }
 
   static Future<Map<String, dynamic>> post(
@@ -117,21 +124,29 @@ class ApiClient {
     bool auth = true,
   }) async {
     final url = Uri.parse('${ApiConfig.baseUrl}$endpoint');
-    var headers = await _headers(auth: auth);
-    var response = await http.post(
-      url,
-      headers: headers,
-      body: jsonEncode(body),
-    );
-    
-    if (response.statusCode == 401 && auth) {
-      final refreshed = await _attemptRefresh();
-      if (refreshed) {
-        headers = await _headers(auth: auth);
-        response = await http.post(url, headers: headers, body: jsonEncode(body));
+    try {
+      var headers = await _headers(auth: auth);
+      var response = await http.post(
+        url,
+        headers: headers,
+        body: jsonEncode(body),
+      );
+
+      if (response.statusCode == 401 && auth) {
+        final refreshed = await _attemptRefresh();
+        if (refreshed) {
+          headers = await _headers(auth: auth);
+          response = await http.post(
+            url,
+            headers: headers,
+            body: jsonEncode(body),
+          );
+        }
       }
+      return _handleResponse(response);
+    } catch (err) {
+      throw ApiException('Network error. Please check your connection.', 0);
     }
-    return _handleResponse(response);
   }
 
   static Future<Map<String, dynamic>> put(
@@ -140,35 +155,53 @@ class ApiClient {
     bool auth = true,
   }) async {
     final url = Uri.parse('${ApiConfig.baseUrl}$endpoint');
-    var headers = await _headers(auth: auth);
-    var response = await http.put(
-      url,
-      headers: headers,
-      body: jsonEncode(body),
-    );
-    
-    if (response.statusCode == 401 && auth) {
-      final refreshed = await _attemptRefresh();
-      if (refreshed) {
-        headers = await _headers(auth: auth);
-        response = await http.put(url, headers: headers, body: jsonEncode(body));
+    try {
+      var headers = await _headers(auth: auth);
+      var response = await http.put(
+        url,
+        headers: headers,
+        body: jsonEncode(body),
+      );
+
+      if (response.statusCode == 401 && auth) {
+        final refreshed = await _attemptRefresh();
+        if (refreshed) {
+          headers = await _headers(auth: auth);
+          response = await http.put(
+            url,
+            headers: headers,
+            body: jsonEncode(body),
+          );
+        }
       }
+      return _handleResponse(response);
+    } catch (err) {
+      throw ApiException('Network error. Please check your connection.', 0);
     }
-    return _handleResponse(response);
   }
 
   // ── Response Handler ──────────────────────────────
   static Map<String, dynamic> _handleResponse(http.Response response) {
-    final body = jsonDecode(response.body);
+    Map<String, dynamic>? body;
+    try {
+      body = jsonDecode(response.body) as Map<String, dynamic>?;
+    } catch (_) {
+      body = null;
+    }
 
     if (response.statusCode >= 200 && response.statusCode < 300) {
-      return body;
+      return body ?? {};
     } else {
       if (response.statusCode == 401) {
         clearAll();
-        navigatorKey.currentState?.pushNamedAndRemoveUntil('/login', (route) => false);
+        navigatorKey.currentState?.pushNamedAndRemoveUntil(
+          '/login',
+          (route) => false,
+        );
       }
-      final message = body['message'] ?? body['error'] ?? 'Something went wrong';
+      final message = body != null
+          ? body['message'] ?? body['error'] ?? 'Something went wrong'
+          : 'Something went wrong';
       throw ApiException(message, response.statusCode);
     }
   }

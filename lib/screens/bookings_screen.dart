@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import '../config/theme.dart';
 import '../providers/booking_provider.dart';
 import '../models/booking.dart';
-import '../widgets/glass_card.dart';
 import '../widgets/status_badge.dart';
 import '../widgets/connection_banner.dart';
 
@@ -19,6 +18,36 @@ class _BookingsScreenState extends State<BookingsScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final _tabs = ['All', 'Pending', 'Accepted', 'Completed'];
+
+  IconData _getCategoryIcon(String serviceName) {
+    final name = serviceName.toLowerCase();
+    if (name.contains('plumb') || name.contains('tap') || name.contains('pipe')) return Icons.plumbing_rounded;
+    if (name.contains('clean') || name.contains('dust') || name.contains('wash')) return Icons.cleaning_services_rounded;
+    if (name.contains('electr') || name.contains('wiring') || name.contains('switch')) return Icons.electrical_services_rounded;
+    if (name.contains('paint') || name.contains('wall')) return Icons.format_paint_rounded;
+    if (name.contains('handy') || name.contains('repair') || name.contains('mount')) return Icons.handyman_rounded;
+    return Icons.home_repair_service_rounded;
+  }
+
+  Color _getCategoryColor(String serviceName) {
+    final name = serviceName.toLowerCase();
+    if (name.contains('plumb') || name.contains('tap') || name.contains('pipe')) return const Color(0xFFEFF7FF);
+    if (name.contains('clean') || name.contains('dust') || name.contains('wash')) return const Color(0xFFF0EDFF);
+    if (name.contains('electr') || name.contains('wiring') || name.contains('switch')) return const Color(0xFFFFF4E1);
+    if (name.contains('paint') || name.contains('wall')) return const Color(0xFFFFF0F7);
+    if (name.contains('handy') || name.contains('repair') || name.contains('mount')) return const Color(0xFFFFF1E9);
+    return const Color(0xFFF1F6FF);
+  }
+
+  Color _getCategoryIconColor(String serviceName) {
+    final name = serviceName.toLowerCase();
+    if (name.contains('plumb') || name.contains('tap') || name.contains('pipe')) return const Color(0xFF2196F3);
+    if (name.contains('clean') || name.contains('dust') || name.contains('wash')) return const Color(0xFF673AB7);
+    if (name.contains('electr') || name.contains('wiring') || name.contains('switch')) return const Color(0xFFFF9800);
+    if (name.contains('paint') || name.contains('wall')) return const Color(0xFFE91E63);
+    if (name.contains('handy') || name.contains('repair') || name.contains('mount')) return const Color(0xFFFF5722);
+    return const Color(0xFF3F51B5);
+  }
 
   @override
   void initState() {
@@ -60,58 +89,83 @@ class _BookingsScreenState extends State<BookingsScreen>
                 ),
               ),
               Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
                 child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    IconButton(
-                      onPressed: () => Navigator.pop(context),
-                      icon: const Icon(Icons.arrow_back_rounded,
-                          color: AppTheme.textPrimary),
-                    ),
-                    Expanded(
-                      child: Text(
-                        'My Bookings',
-                        textAlign: TextAlign.center,
-                        style: GoogleFonts.outfit(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
+                    // Back button card
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(14),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.05),
+                            blurRadius: 8,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: IconButton(
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(
+                          Icons.arrow_back_rounded,
                           color: AppTheme.textPrimary,
+                          size: 20,
                         ),
                       ),
                     ),
-                    // Live indicator
+                    Text(
+                      'My Bookings',
+                      style: GoogleFonts.outfit(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
+                        color: AppTheme.textPrimary,
+                      ),
+                    ),
+                    // Three-dot menu card with connection indicator dot
                     Consumer<BookingProvider>(
                       builder: (_, bp, __) => Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: (bp.isSocketConnected ? AppTheme.success : AppTheme.error).withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(12),
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(14),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.05),
+                              blurRadius: 8,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
                         ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
+                        child: Stack(
+                          clipBehavior: Clip.none,
                           children: [
-                            Container(
-                              width: 6, height: 6,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: bp.isSocketConnected ? AppTheme.success : AppTheme.error,
+                            IconButton(
+                              onPressed: () {},
+                              icon: const Icon(
+                                Icons.more_vert_rounded,
+                                color: AppTheme.textPrimary,
+                                size: 20,
                               ),
                             ),
-                            const SizedBox(width: 4),
-                            Text(
-                              bp.isSocketConnected ? 'Live' : '•••',
-                              style: GoogleFonts.inter(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                                color: bp.isSocketConnected ? AppTheme.success : AppTheme.error,
+                            Positioned(
+                              right: 8,
+                              top: 8,
+                              child: Container(
+                                width: 8,
+                                height: 8,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: bp.isSocketConnected
+                                      ? AppTheme.success
+                                      : AppTheme.error,
+                                ),
                               ),
                             ),
                           ],
                         ),
                       ),
                     ),
-                    const SizedBox(width: 8),
                   ],
                 ),
               ),
@@ -198,6 +252,7 @@ class _BookingsScreenState extends State<BookingsScreen>
                   },
                 ),
               ),
+              _buildTrustBadgesRow(),
             ],
           ),
         ),
@@ -207,136 +262,248 @@ class _BookingsScreenState extends State<BookingsScreen>
 
   Widget _buildBookingCard(Booking booking) {
     final isAccepted = booking.status == 'accepted';
-    return GlassCard(
-      onTap: () {
-        Navigator.pushNamed(
-          context,
-          '/booking-detail',
-          arguments: booking,
-        ).then((_) {
-          // Refresh list when returning from detail / tracking
-          context.read<BookingProvider>().fetchBookings();
-        });
-      },
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Text(
-                  booking.serviceName,
-                  style: GoogleFonts.outfit(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.textPrimary,
-                  ),
-                ),
-              ),
-              StatusBadge(status: booking.status),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Icon(Icons.calendar_today_rounded,
-                  size: 14, color: AppTheme.textMuted),
-              const SizedBox(width: 6),
-              Text(
-                booking.date?.split('T')[0] ?? 'Instant',
-                style: GoogleFonts.inter(
-                  fontSize: 13,
-                  color: AppTheme.textSecondary,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Icon(Icons.access_time_rounded,
-                  size: 14, color: AppTheme.textMuted),
-              const SizedBox(width: 6),
-              Text(
-                booking.slot ?? 'Now',
-                style: GoogleFonts.inter(
-                  fontSize: 13,
-                  color: AppTheme.textSecondary,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                booking.providerName,
-                style: GoogleFonts.inter(
-                  fontSize: 13,
-                  color: AppTheme.textMuted,
-                ),
-              ),
-              Row(
-                children: [
-                  // ── Quick Track chip (accepted bookings only) ──
-                  if (isAccepted) ...[
-                    GestureDetector(
-                      onTap: () {
-                        context
-                            .read<BookingProvider>()
-                            .startTrackingBooking(booking);
-                        Navigator.pushNamed(
-                          context,
-                          '/live-tracking',
-                          arguments: booking.id,
-                        ).then((_) {
-                          context
-                              .read<BookingProvider>()
-                              .fetchBookings();
-                        });
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          gradient: AppTheme.primaryGradient,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(
-                              Icons.location_on_rounded,
-                              size: 12,
-                              color: Colors.white,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              'Track',
-                              style: GoogleFonts.inter(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                  ],
-                  Text(
-                    '₹${booking.price.toInt()}',
-                    style: GoogleFonts.outfit(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      color: AppTheme.accent,
-                    ),
-                  ),
-                ],
-              ),
-            ],
+    final bgColor = _getCategoryColor(booking.serviceName);
+    final iconColor = _getCategoryIconColor(booking.serviceName);
+    final icon = _getCategoryIcon(booking.serviceName);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: AppTheme.primary.withValues(alpha: 0.05),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 12,
+            offset: const Offset(0, 5),
           ),
         ],
       ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(20),
+        child: InkWell(
+          onTap: () {
+            Navigator.pushNamed(
+              context,
+              '/booking-detail',
+              arguments: booking,
+            ).then((_) {
+              if (!mounted) return;
+              context.read<BookingProvider>().fetchBookings();
+            });
+          },
+          borderRadius: BorderRadius.circular(20),
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Row(
+              children: [
+                // Left Icon
+                Container(
+                  width: 58,
+                  height: 58,
+                  decoration: BoxDecoration(
+                    color: bgColor,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Icon(
+                    icon,
+                    color: iconColor,
+                    size: 28,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                // Middle Details
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        booking.serviceName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.outfit(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                          color: AppTheme.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 5),
+                      Row(
+                        children: [
+                          const Icon(Icons.calendar_today_rounded,
+                              size: 13, color: AppTheme.textMuted),
+                          const SizedBox(width: 4),
+                          Text(
+                            booking.date?.split('T')[0] ?? 'Instant',
+                            style: GoogleFonts.inter(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: AppTheme.textSecondary,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          const Icon(Icons.access_time_rounded,
+                              size: 13, color: AppTheme.textMuted),
+                          const SizedBox(width: 4),
+                          Text(
+                            booking.slot ?? 'Now',
+                            style: GoogleFonts.inter(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: AppTheme.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 5),
+                      Text(
+                        booking.providerName,
+                        style: GoogleFonts.inter(
+                          fontSize: 13,
+                          color: AppTheme.textMuted,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                // Right section
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    StatusBadge(status: booking.status),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        if (isAccepted) ...[
+                          GestureDetector(
+                            onTap: () {
+                              context
+                                  .read<BookingProvider>()
+                                  .startTrackingBooking(booking);
+                              Navigator.pushNamed(
+                                context,
+                                '/live-tracking',
+                                arguments: booking.id,
+                              ).then((_) {
+                                if (!mounted) return;
+                                context.read<BookingProvider>().fetchBookings();
+                              });
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 5),
+                              decoration: BoxDecoration(
+                                gradient: AppTheme.primaryGradient,
+                                borderRadius: BorderRadius.circular(12),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: AppTheme.primary.withValues(alpha: 0.3),
+                                    blurRadius: 6,
+                                    offset: const Offset(0, 3),
+                                  ),
+                                ],
+                              ),
+                              child: Text(
+                                'Track',
+                                style: GoogleFonts.inter(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w800,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                        ],
+                        Text(
+                          '₹${booking.price.toInt()}',
+                          style: GoogleFonts.outfit(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            color: AppTheme.primary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(width: 4),
+                const Icon(
+                  Icons.chevron_right_rounded,
+                  color: AppTheme.textMuted,
+                  size: 20,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTrustBadgesRow() {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 10),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.8),
+        border: Border(
+          top: BorderSide(
+            color: AppTheme.primary.withValues(alpha: 0.08),
+          ),
+        ),
+      ),
+      child: const Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          _TrustBadgeItem(
+            icon: Icons.verified_user_rounded,
+            label: 'Verified Pros',
+          ),
+          _TrustBadgeItem(
+            icon: Icons.timer_rounded,
+            label: 'On-time Service',
+          ),
+          _TrustBadgeItem(
+            icon: Icons.security_rounded,
+            label: 'Secure & Safe',
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TrustBadgeItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+
+  const _TrustBadgeItem({required this.icon, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(
+          icon,
+          size: 16,
+          color: AppTheme.primary,
+        ),
+        const SizedBox(width: 5),
+        Text(
+          label,
+          style: GoogleFonts.inter(
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+            color: AppTheme.textSecondary,
+          ),
+        ),
+      ],
     );
   }
 }

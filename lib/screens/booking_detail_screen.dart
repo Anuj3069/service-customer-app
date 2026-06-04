@@ -109,50 +109,82 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
           child: Column(
             children: [
               Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
                 child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    IconButton(
-                      onPressed: () => Navigator.pop(context),
-                      icon: const Icon(Icons.arrow_back_rounded,
-                          color: AppTheme.textPrimary),
-                    ),
-                    Expanded(
-                      child: Text(
-                        'Booking Details',
-                        textAlign: TextAlign.center,
-                        style: GoogleFonts.outfit(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(14),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.05),
+                            blurRadius: 8,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: IconButton(
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(
+                          Icons.arrow_back_rounded,
                           color: AppTheme.textPrimary,
+                          size: 20,
                         ),
                       ),
                     ),
-                    // Refresh indicator
-                    if (_refreshing)
-                      const SizedBox(
-                        width: 24,
-                        height: 24,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: AppTheme.primary,
-                        ),
-                      )
-                    else
-                      IconButton(
-                        onPressed: _refreshBooking,
-                        icon: const Icon(Icons.refresh_rounded,
-                            color: AppTheme.textMuted),
-                        tooltip: 'Refresh',
+                    Text(
+                      'Booking Details',
+                      style: GoogleFonts.outfit(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
+                        color: AppTheme.textPrimary,
                       ),
+                    ),
+                    _refreshing
+                        ? const SizedBox(
+                            width: 48,
+                            height: 48,
+                            child: Center(
+                              child: SizedBox(
+                                width: 22,
+                                height: 22,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.5,
+                                  color: AppTheme.primary,
+                                ),
+                              ),
+                            ),
+                          )
+                        : Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(14),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.05),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 3),
+                                ),
+                              ],
+                            ),
+                            child: IconButton(
+                              onPressed: _refreshBooking,
+                              icon: const Icon(
+                                Icons.refresh_rounded,
+                                color: AppTheme.textPrimary,
+                                size: 20,
+                              ),
+                            ),
+                          ),
                   ],
                 ),
               ),
               Expanded(
                 child: SingleChildScrollView(
                   physics: const BouncingScrollPhysics(),
-                  padding: const EdgeInsets.all(24),
+                  padding: const EdgeInsets.all(20),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -161,18 +193,37 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                         child: Column(
                           children: [
                             Container(
-                              width: 80,
-                              height: 80,
+                              width: 90,
+                              height: 90,
                               decoration: BoxDecoration(
-                                color: AppTheme.statusColor(booking.status)
-                                    .withValues(alpha: 0.15),
-                                borderRadius: BorderRadius.circular(24),
+                                shape: BoxShape.circle,
+                                color: Colors.white,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: AppTheme.statusColor(booking.status).withValues(alpha: 0.25),
+                                    blurRadius: 20,
+                                    offset: const Offset(0, 8),
+                                  ),
+                                ],
+                                border: Border.all(
+                                  color: AppTheme.statusColor(booking.status).withValues(alpha: 0.15),
+                                  width: 2,
+                                ),
                               ),
-                              child: Icon(
-                                _statusIcon(booking.status),
-                                color:
-                                    AppTheme.statusColor(booking.status),
-                                size: 40,
+                              child: Center(
+                                child: Container(
+                                  width: 74,
+                                  height: 74,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: AppTheme.statusColor(booking.status).withValues(alpha: 0.1),
+                                  ),
+                                  child: Icon(
+                                    _statusIcon(booking.status),
+                                    color: AppTheme.statusColor(booking.status),
+                                    size: 34,
+                                  ),
+                                ),
                               ),
                             ),
                             const SizedBox(height: 16),
@@ -203,6 +254,44 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                             _detailRow('Time Slot', booking.slot ?? 'Now'),
                             _detailRow(
                                 'Price', '₹${booking.price.toInt()}'),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    'Payment Status',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 14,
+                                      color: AppTheme.textMuted,
+                                    ),
+                                  ),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: booking.paymentStatus == 'paid'
+                                          ? AppTheme.success.withValues(alpha: 0.1)
+                                          : (booking.paymentStatus == 'pending'
+                                              ? AppTheme.warning.withValues(alpha: 0.1)
+                                              : AppTheme.error.withValues(alpha: 0.1)),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Text(
+                                      booking.paymentStatus.toUpperCase(),
+                                      style: GoogleFonts.inter(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                        color: booking.paymentStatus == 'paid'
+                                            ? AppTheme.success
+                                            : (booking.paymentStatus == 'pending'
+                                                ? AppTheme.warning
+                                                : AppTheme.error),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -314,6 +403,18 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                           text: 'Track Provider',
                           icon: Icons.location_on_rounded,
                           onPressed: () => _openTracking(booking),
+                        ),
+                        const SizedBox(height: 12),
+                        GradientButton(
+                          text: 'Chat with Provider',
+                          icon: Icons.chat_bubble_rounded,
+                          onPressed: () {
+                            Navigator.pushNamed(
+                              context,
+                              '/chat',
+                              arguments: booking,
+                            );
+                          },
                         ),
                         const SizedBox(height: 16),
 
@@ -451,19 +552,92 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                         const SizedBox(height: 16),
                       ],
 
-                      // Review button for completed bookings
-                      if (booking.status == 'completed')
-                        GradientButton(
-                          text: 'Write a Review',
-                          icon: Icons.star_rounded,
-                          onPressed: () {
-                            Navigator.pushNamed(
-                              context,
-                              '/review',
-                              arguments: booking,
-                            );
-                          },
-                        ),
+                      // Review / Payment button for completed bookings
+                      if (booking.status == 'completed') ...[
+                        if (booking.paymentStatus == 'paid') ...[
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            margin: const EdgeInsets.only(bottom: 16),
+                            decoration: BoxDecoration(
+                              color: AppTheme.success.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(
+                                color: AppTheme.success.withValues(alpha: 0.3),
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.check_circle_rounded, color: AppTheme.success, size: 20),
+                                const SizedBox(width: 10),
+                                Text(
+                                  'Payment completed successfully!',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppTheme.success,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          GradientButton(
+                            text: 'Write a Review',
+                            icon: Icons.star_rounded,
+                            onPressed: () {
+                              Navigator.pushNamed(
+                                context,
+                                '/review',
+                                arguments: booking,
+                              );
+                            },
+                          ),
+                        ] else ...[
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            margin: const EdgeInsets.only(bottom: 16),
+                            decoration: BoxDecoration(
+                              color: AppTheme.warning.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(
+                                color: AppTheme.warning.withValues(alpha: 0.3),
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.payment_rounded, color: AppTheme.warning, size: 20),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    booking.paymentStatus == 'pending'
+                                        ? 'Payment is pending verification...'
+                                        : 'Payment is required to complete transaction.',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppTheme.warning,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          GradientButton(
+                            text: 'Pay Booking (₹${booking.price.toInt()})',
+                            icon: Icons.payment_rounded,
+                            onPressed: () {
+                              Navigator.pushNamed(
+                                context,
+                                '/payment',
+                                arguments: booking,
+                              ).then((_) {
+                                _refreshBooking();
+                              });
+                            },
+                          ),
+                        ],
+                      ],
                       const SizedBox(height: 40),
                     ],
                   ),
@@ -534,25 +708,44 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
         Column(
           children: [
             Container(
-              width: 16,
-              height: 16,
+              width: 18,
+              height: 18,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: isCompleted ? color : AppTheme.textMuted,
+                color: isCompleted ? color : Colors.white,
+                border: Border.all(
+                  color: isCompleted ? color : AppTheme.textMuted.withValues(alpha: 0.4),
+                  width: 2,
+                ),
+                boxShadow: isCompleted
+                    ? [
+                        BoxShadow(
+                          color: color.withValues(alpha: 0.3),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        ),
+                      ]
+                    : null,
               ),
               child: isCompleted
-                  ? Icon(
-                      isError ? Icons.close : Icons.check,
-                      size: 10,
-                      color: Colors.white,
+                  ? Center(
+                      child: Icon(
+                        isError ? Icons.close : Icons.check,
+                        size: 10,
+                        color: Colors.white,
+                      ),
                     )
                   : null,
             ),
             if (!isLast)
-              Container(
+              SizedBox(
                 width: 2,
                 height: 32,
-                color: AppTheme.textMuted.withValues(alpha: 0.3),
+                child: CustomPaint(
+                  painter: DottedLinePainter(
+                    color: isCompleted ? color.withValues(alpha: 0.6) : AppTheme.textMuted.withValues(alpha: 0.3),
+                  ),
+                ),
               ),
           ],
         ),
@@ -564,7 +757,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
               title,
               style: GoogleFonts.inter(
                 fontSize: 14,
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight.w700,
                 color: AppTheme.textPrimary,
               ),
             ),
@@ -582,4 +775,27 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
       ],
     );
   }
+}
+
+class DottedLinePainter extends CustomPainter {
+  final Color color;
+
+  DottedLinePainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 2
+      ..style = PaintingStyle.stroke;
+    
+    double startY = 0;
+    while (startY < size.height) {
+      canvas.drawCircle(Offset(size.width / 2, startY), 1.2, paint);
+      startY += 6;
+    }
+  }
+
+  @override
+  bool shouldRepaint(CustomPainter oldDelegate) => false;
 }

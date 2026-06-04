@@ -28,30 +28,43 @@ class MatchResultScreen extends StatelessWidget {
               return Column(
                 children: [
                   Padding(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 8),
+                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
                     child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        IconButton(
-                          onPressed: () {
-                            bookingProvider.clearMatchResult();
-                            Navigator.pop(context);
-                          },
-                          icon: const Icon(Icons.arrow_back_rounded,
-                              color: AppTheme.textPrimary),
-                        ),
-                        Expanded(
-                          child: Text(
-                            'Provider Found',
-                            textAlign: TextAlign.center,
-                            style: GoogleFonts.outfit(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w600,
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(14),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.05),
+                                blurRadius: 8,
+                                offset: const Offset(0, 3),
+                              ),
+                            ],
+                          ),
+                          child: IconButton(
+                            onPressed: () {
+                              bookingProvider.clearMatchResult();
+                              Navigator.pop(context);
+                            },
+                            icon: const Icon(
+                              Icons.arrow_back_rounded,
                               color: AppTheme.textPrimary,
+                              size: 20,
                             ),
                           ),
                         ),
-                        const SizedBox(width: 48),
+                        Text(
+                          'Provider Found',
+                          style: GoogleFonts.outfit(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w800,
+                            color: AppTheme.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(width: 48), // visually balance back arrow
                       ],
                     ),
                   ),
