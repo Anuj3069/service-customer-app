@@ -818,31 +818,8 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
       return;
     }
 
-    // Step 2: Confirm booking with the matched provider
-    final success = await bookingProvider.createBooking();
-
-    if (!mounted) return;
-
-    if (success) {
-      Navigator.pushNamedAndRemoveUntil(
-        context,
-        '/bookings',
-        (route) => route.settings.name == '/home',
-      );
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Booking confirmed successfully!'),
-          backgroundColor: AppTheme.success,
-        ),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(bookingProvider.error ?? 'Failed to create booking'),
-          backgroundColor: AppTheme.error,
-        ),
-      );
-    }
+    // Step 2: Navigate to Match Result / Confirmation Screen
+    Navigator.pushNamed(context, '/match-result');
   }
 
   DateTime _dateWithSlotStart(DateTime date, String slot) {

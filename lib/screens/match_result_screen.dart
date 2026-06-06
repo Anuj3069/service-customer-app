@@ -6,8 +6,67 @@ import '../providers/booking_provider.dart';
 import '../widgets/gradient_button.dart';
 import '../widgets/glass_card.dart';
 
-class MatchResultScreen extends StatelessWidget {
+class MatchResultScreen extends StatefulWidget {
   const MatchResultScreen({super.key});
+
+  @override
+  State<MatchResultScreen> createState() => _MatchResultScreenState();
+}
+
+class _MatchResultScreenState extends State<MatchResultScreen> {
+  final TextEditingController _promoController = TextEditingController();
+  bool _isValidating = false;
+  String? _appliedPromoCode;
+  double _discountAmount = 0.0;
+  String? _errorMessage;
+  String? _successMessage;
+
+  @override
+  void dispose() {
+    _promoController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _applyPromoCode(double originalPrice) async {
+    final code = _promoController.text.trim();
+    if (code.isEmpty) return;
+
+    setState(() {
+      _isValidating = true;
+      _errorMessage = null;
+      _successMessage = null;
+    });
+
+    final bookingProvider = context.read<BookingProvider>();
+    final result = await bookingProvider.validatePromoCode(code, originalPrice);
+
+    if (mounted) {
+      setState(() {
+        _isValidating = false;
+        if (result != null) {
+          _appliedPromoCode = result.code;
+          _discountAmount = result.discountAmount;
+          _successMessage = result.message.isNotEmpty 
+              ? result.message 
+              : 'Coupon "$code" applied successfully!';
+        } else {
+          _appliedPromoCode = null;
+          _discountAmount = 0.0;
+          _errorMessage = bookingProvider.error ?? 'Invalid or expired promo code';
+        }
+      });
+    }
+  }
+
+  void _removePromoCode() {
+    setState(() {
+      _promoController.clear();
+      _appliedPromoCode = null;
+      _discountAmount = 0.0;
+      _errorMessage = null;
+      _successMessage = null;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -198,6 +257,164 @@ class MatchResultScreen extends StatelessWidget {
                           ),
                           const SizedBox(height: 16),
 
+                          // Promo Code Input Row
+                          GlassCard(
+                            padding: const EdgeInsets.all(20),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.local_offer_rounded,
+                                      color: AppTheme.primary,
+                                      size: 20,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      'Promo Code',
+                                      style: GoogleFonts.outfit(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                        color: AppTheme.textPrimary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 14),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: TextField(
+                                        controller: _promoController,
+                                        enabled: _appliedPromoCode == null && !_isValidating,
+                                        textCapitalization: TextCapitalization.characters,
+                                        decoration: InputDecoration(
+                                          hintText: 'Enter coupon code',
+                                          hintStyle: GoogleFonts.inter(
+                                            color: AppTheme.textMuted,
+                                            fontSize: 14,
+                                          ),
+                                          contentPadding: const EdgeInsets.symmetric(
+                                            horizontal: 16,
+                                            vertical: 12,
+                                          ),
+                                          filled: true,
+                                          fillColor: Colors.white,
+                                          border: OutlineInputBorder(
+                                            borderRadius: BorderRadius.circular(12),
+                                            borderSide: BorderSide(
+                                              color: AppTheme.textMuted.withValues(alpha: 0.15),
+                                            ),
+                                          ),
+                                          enabledBorder: OutlineInputBorder(
+                                            borderRadius: BorderRadius.circular(12),
+                                            borderSide: BorderSide(
+                                              color: AppTheme.textMuted.withValues(alpha: 0.15),
+                                            ),
+                                          ),
+                                          focusedBorder: OutlineInputBorder(
+                                            borderRadius: BorderRadius.circular(12),
+                                            borderSide: const BorderSide(
+                                              color: AppTheme.primary,
+                                              width: 1.5,
+                                            ),
+                                          ),
+                                        ),
+                                        style: GoogleFonts.inter(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
+                                          color: AppTheme.textPrimary,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    if (_appliedPromoCode != null)
+                                      ElevatedButton(
+                                        onPressed: _removePromoCode,
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: AppTheme.error.withValues(alpha: 0.1),
+                                          foregroundColor: AppTheme.error,
+                                          elevation: 0,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(12),
+                                          ),
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 16,
+                                            vertical: 12,
+                                          ),
+                                        ),
+                                        child: Text(
+                                          'Remove',
+                                          style: GoogleFonts.inter(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                      )
+                                    else
+                                      ElevatedButton(
+                                        onPressed: _isValidating
+                                            ? null
+                                            : () => _applyPromoCode(match.price),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: AppTheme.primary,
+                                          foregroundColor: Colors.white,
+                                          elevation: 0,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(12),
+                                          ),
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 20,
+                                            vertical: 12,
+                                          ),
+                                        ),
+                                        child: _isValidating
+                                            ? const SizedBox(
+                                                width: 16,
+                                                height: 16,
+                                                child: CircularProgressIndicator(
+                                                  strokeWidth: 2.5,
+                                                  color: Colors.white,
+                                                ),
+                                              )
+                                            : Text(
+                                                'Apply',
+                                                style: GoogleFonts.inter(
+                                                  fontSize: 14,
+                                                  fontWeight: FontWeight.w700,
+                                                ),
+                                              ),
+                                      ),
+                                  ],
+                                ),
+                                if (_errorMessage != null) ...[
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    _errorMessage!,
+                                    style: GoogleFonts.inter(
+                                      color: AppTheme.error,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                                if (_successMessage != null) ...[
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    _successMessage!,
+                                    style: GoogleFonts.inter(
+                                      color: AppTheme.success,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+
                           // Booking summary
                           GlassCard(
                             padding: const EdgeInsets.all(24),
@@ -227,6 +444,38 @@ class MatchResultScreen extends StatelessWidget {
                                 const Divider(
                                     color: AppTheme.textMuted,
                                     height: 32),
+                                _summaryRow('Subtotal',
+                                    '₹${match.price.toInt()}'),
+                                if (_discountAmount > 0) ...[
+                                  const SizedBox(height: 8),
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(vertical: 4),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(
+                                          'Promo Discount',
+                                          style: GoogleFonts.inter(
+                                            fontSize: 14,
+                                            color: AppTheme.success,
+                                          ),
+                                        ),
+                                        Text(
+                                          '- ₹${_discountAmount.toInt()}',
+                                          style: GoogleFonts.inter(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w600,
+                                            color: AppTheme.success,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                                const Divider(
+                                    color: AppTheme.textMuted,
+                                    height: 32),
                                 Row(
                                   mainAxisAlignment:
                                       MainAxisAlignment
@@ -241,7 +490,7 @@ class MatchResultScreen extends StatelessWidget {
                                       ),
                                     ),
                                     Text(
-                                      '₹${match.price.toInt()}',
+                                      '₹${(match.price - _discountAmount).toInt()}',
                                       style: GoogleFonts.outfit(
                                         fontSize: 24,
                                         fontWeight: FontWeight.w700,
@@ -314,34 +563,5 @@ class MatchResultScreen extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  Future<void> _confirmBooking(BuildContext context) async {
-    final bookingProvider = context.read<BookingProvider>();
-    final success = await bookingProvider.createBooking();
-
-    if (!context.mounted) return;
-
-    if (success) {
-      Navigator.pushNamedAndRemoveUntil(
-        context,
-        '/bookings',
-        (route) => route.settings.name == '/home',
-      );
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('🎉 Booking confirmed successfully!'),
-          backgroundColor: AppTheme.success,
-        ),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content:
-              Text(bookingProvider.error ?? 'Failed to create booking'),
-          backgroundColor: AppTheme.error,
-        ),
-      );
-    }
   }
 }
