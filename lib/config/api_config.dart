@@ -34,6 +34,4 @@ class ApiConfig {
   static String payBookingCash(String id) => '/user/bookings/$id/pay-cash';
   static String verifyPayment(String id) => '/payments/$id/verify';
 
-  // Promo Codes
-  static const String validatePromo = '/user/promos/validate';
 }

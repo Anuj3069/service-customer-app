@@ -18,11 +18,6 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
   bool _bookNow = true;
   DateTime? _selectedDate;
   String? _selectedSlot;
-  final TextEditingController _promoController = TextEditingController();
-  bool _isValidatingPromo = false;
-  String? _appliedPromoCode;
-  String? _promoErrorMessage;
-  String? _promoSuccessMessage;
 
   final List<String> _timeSlots = [
     '09:00-10:00',
@@ -34,12 +29,6 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
     '16:00-17:00',
     '17:00-18:00',
   ];
-
-  @override
-  void dispose() {
-    _promoController.dispose();
-    super.dispose();
-  }
 
   Widget _buildVectorIllustration(String name) {
     final cleanName = name.toLowerCase();
@@ -501,153 +490,6 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
                         const SizedBox(height: 30),
                       ],
 
-                      // Coupon Section for Book Now
-                      if (_bookNow) ...[
-                        const SizedBox(height: 20),
-                        Container(
-                          padding: const EdgeInsets.all(18),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: AppTheme.textMuted.withValues(alpha: 0.14),
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.04),
-                                blurRadius: 14,
-                                offset: const Offset(0, 6),
-                              ),
-                            ],
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Have a coupon?',
-                                style: GoogleFonts.outfit(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppTheme.textPrimary,
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: TextField(
-                                      controller: _promoController,
-                                      enabled:
-                                          _appliedPromoCode == null &&
-                                          !_isValidatingPromo,
-                                      textCapitalization:
-                                          TextCapitalization.characters,
-                                      decoration: InputDecoration(
-                                        hintText: 'Enter coupon code',
-                                        hintStyle: GoogleFonts.inter(
-                                          color: AppTheme.textMuted,
-                                          fontSize: 14,
-                                        ),
-                                        contentPadding:
-                                            const EdgeInsets.symmetric(
-                                              horizontal: 16,
-                                              vertical: 14,
-                                            ),
-                                        filled: true,
-                                        fillColor: AppTheme.bgCardLight,
-                                        border: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            14,
-                                          ),
-                                          borderSide: BorderSide(
-                                            color: AppTheme.textMuted
-                                                .withValues(alpha: 0.15),
-                                          ),
-                                        ),
-                                      ),
-                                      style: GoogleFonts.inter(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w600,
-                                        color: AppTheme.textPrimary,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  ElevatedButton(
-                                    onPressed: _isValidatingPromo
-                                        ? null
-                                        : (_appliedPromoCode != null
-                                              ? _removePromoCode
-                                              : () => _applyPromoCode(
-                                                  service.basePrice,
-                                                  service.id,
-                                                )),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: _appliedPromoCode != null
-                                          ? AppTheme.error.withValues(
-                                              alpha: 0.12,
-                                            )
-                                          : AppTheme.primary,
-                                      foregroundColor: _appliedPromoCode != null
-                                          ? AppTheme.error
-                                          : Colors.white,
-                                      elevation: 0,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(14),
-                                      ),
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 18,
-                                        vertical: 14,
-                                      ),
-                                    ),
-                                    child: _isValidatingPromo
-                                        ? const SizedBox(
-                                            width: 16,
-                                            height: 16,
-                                            child: CircularProgressIndicator(
-                                              strokeWidth: 2.5,
-                                              color: Colors.white,
-                                            ),
-                                          )
-                                        : Text(
-                                            _appliedPromoCode != null
-                                                ? 'Remove'
-                                                : 'Apply',
-                                            style: GoogleFonts.inter(
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.w700,
-                                            ),
-                                          ),
-                                  ),
-                                ],
-                              ),
-                              if (_promoErrorMessage != null) ...[
-                                const SizedBox(height: 12),
-                                Text(
-                                  _promoErrorMessage!,
-                                  style: GoogleFonts.inter(
-                                    color: AppTheme.error,
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ],
-                              if (_promoSuccessMessage != null) ...[
-                                const SizedBox(height: 12),
-                                Text(
-                                  _promoSuccessMessage!,
-                                  style: GoogleFonts.inter(
-                                    color: AppTheme.success,
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                        ),
-                      ],
-
                       // Sleek Booking Buttons
                       Consumer<BookingProvider>(
                         builder: (context, bookingProvider, _) {
@@ -655,10 +497,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
                             return GestureDetector(
                               onTap: bookingProvider.isLoading
                                   ? null
-                                  : () => _requestInstantBooking(
-                                      service,
-                                      promoCode: _appliedPromoCode,
-                                    ),
+                                  : () => _requestInstantBooking(service),
                               child: Container(
                                 width: double.infinity,
                                 padding: const EdgeInsets.symmetric(
@@ -995,15 +834,11 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
     );
   }
 
-  Future<void> _requestInstantBooking(
-    Service service, {
-    String? promoCode,
-  }) async {
+  Future<void> _requestInstantBooking(Service service) async {
     final bookingProvider = context.read<BookingProvider>();
 
     final success = await bookingProvider.createInstantBooking(
       serviceId: service.id,
-      promoCode: promoCode,
     );
 
     if (!mounted) return;
@@ -1057,46 +892,6 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
     return DateTime(date.year, date.month, date.day, hour, minute);
   }
 
-  Future<void> _applyPromoCode(double originalPrice, String serviceId) async {
-    final code = _promoController.text.trim();
-    if (code.isEmpty) return;
-
-    setState(() {
-      _isValidatingPromo = true;
-      _promoErrorMessage = null;
-      _promoSuccessMessage = null;
-    });
-
-    final bookingProvider = context.read<BookingProvider>();
-    final result = await bookingProvider.validatePromoCode(code, originalPrice);
-
-    if (!mounted) return;
-
-    setState(() {
-      _isValidatingPromo = false;
-      if (result != null) {
-        _appliedPromoCode = result.code;
-        _promoSuccessMessage = result.message.isNotEmpty
-            ? result.message
-            : 'Coupon "$code" applied successfully!';
-        _promoErrorMessage = null;
-      } else {
-        _appliedPromoCode = null;
-        _promoSuccessMessage = null;
-        _promoErrorMessage =
-            bookingProvider.error ?? 'Invalid or expired promo code';
-      }
-    });
-  }
-
-  void _removePromoCode() {
-    setState(() {
-      _promoController.clear();
-      _appliedPromoCode = null;
-      _promoErrorMessage = null;
-      _promoSuccessMessage = null;
-    });
-  }
 }
 
 class FaucetPainter extends CustomPainter {

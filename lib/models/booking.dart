@@ -23,8 +23,6 @@ class Booking {
   final Map<String, dynamic>? providerDetails;
   final List<double>? workerLocationCoordinates;
   final double? originalPrice;
-  final double? discountAmount;
-  final String? promoCode;
 
   Booking({
     required this.id,
@@ -51,8 +49,6 @@ class Booking {
     this.providerDetails,
     this.workerLocationCoordinates,
     this.originalPrice,
-    this.discountAmount,
-    this.promoCode,
   });
 
   factory Booking.fromJson(Map<String, dynamic> json) {
@@ -94,8 +90,6 @@ class Booking {
       providerDetails: json['providerId'] is Map ? json['providerId'] : null,
       workerLocationCoordinates: coords,
       originalPrice: json['originalPrice'] != null ? (json['originalPrice'] as num).toDouble() : null,
-      discountAmount: json['discountAmount'] != null ? (json['discountAmount'] as num).toDouble() : null,
-      promoCode: json['promoCode'],
     );
   }
 
