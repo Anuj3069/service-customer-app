@@ -68,6 +68,35 @@ class _MatchResultScreenState extends State<MatchResultScreen> {
     });
   }
 
+  Future<void> _confirmBooking(BuildContext context) async {
+    final bookingProvider = context.read<BookingProvider>();
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+
+    final success = await bookingProvider.createBooking(
+      promoCode: _appliedPromoCode,
+    );
+
+    if (!mounted) return;
+
+    if (success) {
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('Booking confirmed successfully!'),
+          backgroundColor: Color(0xFF00C853),
+        ),
+      );
+      navigator.pushReplacementNamed('/booking-detail');
+    } else {
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(bookingProvider.error ?? 'Failed to confirm booking'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
