@@ -63,10 +63,12 @@ class BookingApiService {
   /// Create an instant booking (Uber-style broadcast to workers)
   Future<Booking> createInstantBooking({
     required String serviceId,
+    String? promoCode,
     Map<String, dynamic>? customerLocation,
   }) async {
     final response = await ApiClient.post(ApiConfig.instantBooking, {
       'serviceId': serviceId,
+      if (promoCode != null) 'promoCode': promoCode,
       if (customerLocation != null) 'customerLocation': customerLocation,
     });
 

@@ -18,6 +18,11 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
   bool _bookNow = true;
   DateTime? _selectedDate;
   String? _selectedSlot;
+  final TextEditingController _promoController = TextEditingController();
+  bool _isValidatingPromo = false;
+  String? _appliedPromoCode;
+  String? _promoErrorMessage;
+  String? _promoSuccessMessage;
 
   final List<String> _timeSlots = [
     '09:00-10:00',
@@ -30,12 +35,22 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
     '17:00-18:00',
   ];
 
+  @override
+  void dispose() {
+    _promoController.dispose();
+    super.dispose();
+  }
+
   Widget _buildVectorIllustration(String name) {
     final cleanName = name.toLowerCase();
     CustomPainter painter;
-    if (cleanName.contains('tap') || cleanName.contains('faucet') || cleanName.contains('installation')) {
+    if (cleanName.contains('tap') ||
+        cleanName.contains('faucet') ||
+        cleanName.contains('installation')) {
       painter = FaucetPainter();
-    } else if (cleanName.contains('pipe') || cleanName.contains('leak') || cleanName.contains('repair')) {
+    } else if (cleanName.contains('pipe') ||
+        cleanName.contains('leak') ||
+        cleanName.contains('repair')) {
       painter = PipesPainter();
     } else {
       painter = WrenchPainter();
@@ -178,9 +193,18 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
                         const SizedBox(height: 24),
                         _buildTrustRow(
                           badges: [
-                            MapEntry('Verified Pros', Icons.verified_user_rounded),
-                            MapEntry('Upfront Pricing', Icons.monetization_on_rounded),
-                            MapEntry('24/7 Support', Icons.support_agent_rounded),
+                            MapEntry(
+                              'Verified Pros',
+                              Icons.verified_user_rounded,
+                            ),
+                            MapEntry(
+                              'Upfront Pricing',
+                              Icons.monetization_on_rounded,
+                            ),
+                            MapEntry(
+                              '24/7 Support',
+                              Icons.support_agent_rounded,
+                            ),
                           ],
                         ),
                         const SizedBox(height: 28),
@@ -220,37 +244,56 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
                                         clipBehavior: Clip.none,
                                         children: [
                                           AnimatedContainer(
-                                            duration: const Duration(milliseconds: 200),
+                                            duration: const Duration(
+                                              milliseconds: 200,
+                                            ),
                                             width: 65,
-                                            margin: const EdgeInsets.only(right: 12, top: 4, bottom: 4),
+                                            margin: const EdgeInsets.only(
+                                              right: 12,
+                                              top: 4,
+                                              bottom: 4,
+                                            ),
                                             decoration: BoxDecoration(
                                               gradient: isSelected
                                                   ? AppTheme.primaryGradient
                                                   : null,
-                                              color: isSelected ? null : Colors.white,
-                                              borderRadius: BorderRadius.circular(16),
+                                              color: isSelected
+                                                  ? null
+                                                  : Colors.white,
+                                              borderRadius:
+                                                  BorderRadius.circular(16),
                                               border: isSelected
                                                   ? null
                                                   : Border.all(
-                                                      color: AppTheme.primary.withValues(alpha: 0.05),
+                                                      color: AppTheme.primary
+                                                          .withValues(
+                                                            alpha: 0.05,
+                                                          ),
                                                     ),
                                               boxShadow: [
                                                 BoxShadow(
-                                                  color: Colors.black.withValues(alpha: 0.02),
+                                                  color: Colors.black
+                                                      .withValues(alpha: 0.02),
                                                   blurRadius: 6,
                                                   offset: const Offset(0, 3),
                                                 ),
                                               ],
                                             ),
                                             child: Column(
-                                              mainAxisAlignment: MainAxisAlignment.center,
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
                                               children: [
                                                 Text(
-                                                  DateFormat('EEE').format(date),
+                                                  DateFormat(
+                                                    'EEE',
+                                                  ).format(date),
                                                   style: GoogleFonts.inter(
                                                     fontSize: 12,
                                                     color: isSelected
-                                                        ? Colors.white.withValues(alpha: 0.8)
+                                                        ? Colors.white
+                                                              .withValues(
+                                                                alpha: 0.8,
+                                                              )
                                                         : AppTheme.textMuted,
                                                   ),
                                                 ),
@@ -266,11 +309,16 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
                                                   ),
                                                 ),
                                                 Text(
-                                                  DateFormat('MMM').format(date),
+                                                  DateFormat(
+                                                    'MMM',
+                                                  ).format(date),
                                                   style: GoogleFonts.inter(
                                                     fontSize: 11,
                                                     color: isSelected
-                                                        ? Colors.white.withValues(alpha: 0.8)
+                                                        ? Colors.white
+                                                              .withValues(
+                                                                alpha: 0.8,
+                                                              )
                                                         : AppTheme.textMuted,
                                                   ),
                                                 ),
@@ -282,7 +330,9 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
                                               top: 0,
                                               right: 8,
                                               child: Container(
-                                                padding: const EdgeInsets.all(2),
+                                                padding: const EdgeInsets.all(
+                                                  2,
+                                                ),
                                                 decoration: const BoxDecoration(
                                                   color: Colors.white,
                                                   shape: BoxShape.circle,
@@ -309,7 +359,9 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
                                 color: Colors.white,
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
-                                  color: AppTheme.primary.withValues(alpha: 0.05),
+                                  color: AppTheme.primary.withValues(
+                                    alpha: 0.05,
+                                  ),
                                 ),
                               ),
                               child: const Icon(
@@ -333,12 +385,13 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
                         GridView.builder(
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
-                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            childAspectRatio: 2.8,
-                            mainAxisSpacing: 10,
-                            crossAxisSpacing: 10,
-                          ),
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 2,
+                                childAspectRatio: 2.8,
+                                mainAxisSpacing: 10,
+                                crossAxisSpacing: 10,
+                              ),
                           itemCount: _timeSlots.length,
                           itemBuilder: (context, index) {
                             final slot = _timeSlots[index];
@@ -348,31 +401,46 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
                               child: AnimatedContainer(
                                 duration: const Duration(milliseconds: 200),
                                 decoration: BoxDecoration(
-                                  color: isSelected ? const Color(0xFFEFF7FF) : Colors.white,
+                                  color: isSelected
+                                      ? const Color(0xFFEFF7FF)
+                                      : Colors.white,
                                   borderRadius: BorderRadius.circular(16),
                                   border: Border.all(
-                                    color: isSelected ? AppTheme.primary : AppTheme.primary.withValues(alpha: 0.05),
+                                    color: isSelected
+                                        ? AppTheme.primary
+                                        : AppTheme.primary.withValues(
+                                            alpha: 0.05,
+                                          ),
                                     width: isSelected ? 2 : 1,
                                   ),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.black.withValues(alpha: 0.02),
+                                      color: Colors.black.withValues(
+                                        alpha: 0.02,
+                                      ),
                                       blurRadius: 6,
                                       offset: const Offset(0, 3),
                                     ),
                                   ],
                                 ),
                                 child: Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 14,
+                                  ),
                                   child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
                                     children: [
                                       Text(
                                         slot,
                                         style: GoogleFonts.inter(
                                           fontSize: 13,
-                                          fontWeight: isSelected ? FontWeight.w800 : FontWeight.w500,
-                                          color: isSelected ? AppTheme.primary : AppTheme.textSecondary,
+                                          fontWeight: isSelected
+                                              ? FontWeight.w800
+                                              : FontWeight.w500,
+                                          color: isSelected
+                                              ? AppTheme.primary
+                                              : AppTheme.textSecondary,
                                         ),
                                       ),
                                       if (isSelected)
@@ -433,6 +501,153 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
                         const SizedBox(height: 30),
                       ],
 
+                      // Coupon Section for Book Now
+                      if (_bookNow) ...[
+                        const SizedBox(height: 20),
+                        Container(
+                          padding: const EdgeInsets.all(18),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: AppTheme.textMuted.withValues(alpha: 0.14),
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.04),
+                                blurRadius: 14,
+                                offset: const Offset(0, 6),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Have a coupon?',
+                                style: GoogleFonts.outfit(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppTheme.textPrimary,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: TextField(
+                                      controller: _promoController,
+                                      enabled:
+                                          _appliedPromoCode == null &&
+                                          !_isValidatingPromo,
+                                      textCapitalization:
+                                          TextCapitalization.characters,
+                                      decoration: InputDecoration(
+                                        hintText: 'Enter coupon code',
+                                        hintStyle: GoogleFonts.inter(
+                                          color: AppTheme.textMuted,
+                                          fontSize: 14,
+                                        ),
+                                        contentPadding:
+                                            const EdgeInsets.symmetric(
+                                              horizontal: 16,
+                                              vertical: 14,
+                                            ),
+                                        filled: true,
+                                        fillColor: AppTheme.bgCardLight,
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            14,
+                                          ),
+                                          borderSide: BorderSide(
+                                            color: AppTheme.textMuted
+                                                .withValues(alpha: 0.15),
+                                          ),
+                                        ),
+                                      ),
+                                      style: GoogleFonts.inter(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                        color: AppTheme.textPrimary,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  ElevatedButton(
+                                    onPressed: _isValidatingPromo
+                                        ? null
+                                        : (_appliedPromoCode != null
+                                              ? _removePromoCode
+                                              : () => _applyPromoCode(
+                                                  service.basePrice,
+                                                  service.id,
+                                                )),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: _appliedPromoCode != null
+                                          ? AppTheme.error.withValues(
+                                              alpha: 0.12,
+                                            )
+                                          : AppTheme.primary,
+                                      foregroundColor: _appliedPromoCode != null
+                                          ? AppTheme.error
+                                          : Colors.white,
+                                      elevation: 0,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(14),
+                                      ),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 18,
+                                        vertical: 14,
+                                      ),
+                                    ),
+                                    child: _isValidatingPromo
+                                        ? const SizedBox(
+                                            width: 16,
+                                            height: 16,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2.5,
+                                              color: Colors.white,
+                                            ),
+                                          )
+                                        : Text(
+                                            _appliedPromoCode != null
+                                                ? 'Remove'
+                                                : 'Apply',
+                                            style: GoogleFonts.inter(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                          ),
+                                  ),
+                                ],
+                              ),
+                              if (_promoErrorMessage != null) ...[
+                                const SizedBox(height: 12),
+                                Text(
+                                  _promoErrorMessage!,
+                                  style: GoogleFonts.inter(
+                                    color: AppTheme.error,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                              if (_promoSuccessMessage != null) ...[
+                                const SizedBox(height: 12),
+                                Text(
+                                  _promoSuccessMessage!,
+                                  style: GoogleFonts.inter(
+                                    color: AppTheme.success,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ],
+
                       // Sleek Booking Buttons
                       Consumer<BookingProvider>(
                         builder: (context, bookingProvider, _) {
@@ -440,16 +655,23 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
                             return GestureDetector(
                               onTap: bookingProvider.isLoading
                                   ? null
-                                  : () => _requestInstantBooking(service),
+                                  : () => _requestInstantBooking(
+                                      service,
+                                      promoCode: _appliedPromoCode,
+                                    ),
                               child: Container(
                                 width: double.infinity,
-                                padding: const EdgeInsets.symmetric(vertical: 18),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 18,
+                                ),
                                 decoration: BoxDecoration(
                                   gradient: AppTheme.primaryGradient,
                                   borderRadius: BorderRadius.circular(22),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: AppTheme.primary.withValues(alpha: 0.3),
+                                      color: AppTheme.primary.withValues(
+                                        alpha: 0.3,
+                                      ),
                                       blurRadius: 16,
                                       offset: const Offset(0, 8),
                                     ),
@@ -467,7 +689,8 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
                                         ),
                                       )
                                     : Row(
-                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
                                         children: [
                                           const Icon(
                                             Icons.flash_on_rounded,
@@ -476,7 +699,8 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
                                           ),
                                           const SizedBox(width: 12),
                                           Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
                                             mainAxisSize: MainAxisSize.min,
                                             children: [
                                               Text(
@@ -491,7 +715,8 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
                                                 'Get a pro at your doorstep in minutes',
                                                 style: GoogleFonts.inter(
                                                   fontSize: 12,
-                                                  color: Colors.white.withValues(alpha: 0.8),
+                                                  color: Colors.white
+                                                      .withValues(alpha: 0.8),
                                                 ),
                                               ),
                                             ],
@@ -505,7 +730,9 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
                               text: 'Confirm Slot',
                               icon: Icons.check_circle_outline_rounded,
                               isLoading: bookingProvider.isLoading,
-                              onPressed: (_selectedDate != null && _selectedSlot != null)
+                              onPressed:
+                                  (_selectedDate != null &&
+                                      _selectedSlot != null)
                                   ? () => _createDirectBooking(service)
                                   : null,
                             );
@@ -696,11 +923,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
         return Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              badge.value,
-              size: 16,
-              color: AppTheme.primary,
-            ),
+            Icon(badge.value, size: 16, color: AppTheme.primary),
             const SizedBox(width: 5),
             Text(
               badge.key,
@@ -772,11 +995,15 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
     );
   }
 
-  Future<void> _requestInstantBooking(Service service) async {
+  Future<void> _requestInstantBooking(
+    Service service, {
+    String? promoCode,
+  }) async {
     final bookingProvider = context.read<BookingProvider>();
 
     final success = await bookingProvider.createInstantBooking(
       serviceId: service.id,
+      promoCode: promoCode,
     );
 
     if (!mounted) return;
@@ -830,6 +1057,46 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
     return DateTime(date.year, date.month, date.day, hour, minute);
   }
 
+  Future<void> _applyPromoCode(double originalPrice, String serviceId) async {
+    final code = _promoController.text.trim();
+    if (code.isEmpty) return;
+
+    setState(() {
+      _isValidatingPromo = true;
+      _promoErrorMessage = null;
+      _promoSuccessMessage = null;
+    });
+
+    final bookingProvider = context.read<BookingProvider>();
+    final result = await bookingProvider.validatePromoCode(code, originalPrice);
+
+    if (!mounted) return;
+
+    setState(() {
+      _isValidatingPromo = false;
+      if (result != null) {
+        _appliedPromoCode = result.code;
+        _promoSuccessMessage = result.message.isNotEmpty
+            ? result.message
+            : 'Coupon "$code" applied successfully!';
+        _promoErrorMessage = null;
+      } else {
+        _appliedPromoCode = null;
+        _promoSuccessMessage = null;
+        _promoErrorMessage =
+            bookingProvider.error ?? 'Invalid or expired promo code';
+      }
+    });
+  }
+
+  void _removePromoCode() {
+    setState(() {
+      _promoController.clear();
+      _appliedPromoCode = null;
+      _promoErrorMessage = null;
+      _promoSuccessMessage = null;
+    });
+  }
 }
 
 class FaucetPainter extends CustomPainter {
@@ -852,36 +1119,65 @@ class FaucetPainter extends CustomPainter {
     final path = Path()
       ..moveTo(size.width * 0.1, size.height * 0.6)
       ..lineTo(size.width * 0.5, size.height * 0.6)
-      ..cubicTo(size.width * 0.7, size.height * 0.6, size.width * 0.7, size.height * 0.2, size.width * 0.5, size.height * 0.2)
+      ..cubicTo(
+        size.width * 0.7,
+        size.height * 0.6,
+        size.width * 0.7,
+        size.height * 0.2,
+        size.width * 0.5,
+        size.height * 0.2,
+      )
       ..lineTo(size.width * 0.45, size.height * 0.2)
       ..lineTo(size.width * 0.45, size.height * 0.3)
       ..lineTo(size.width * 0.5, size.height * 0.3)
-      ..cubicTo(size.width * 0.6, size.height * 0.3, size.width * 0.6, size.height * 0.5, size.width * 0.5, size.height * 0.5)
+      ..cubicTo(
+        size.width * 0.6,
+        size.height * 0.3,
+        size.width * 0.6,
+        size.height * 0.5,
+        size.width * 0.5,
+        size.height * 0.5,
+      )
       ..lineTo(size.width * 0.1, size.height * 0.5)
       ..close();
     canvas.drawPath(path, bodyPaint);
 
     // Draw faucet mouth/nozzle
     canvas.drawRect(
-      Rect.fromLTWH(size.width * 0.42, size.height * 0.3, size.width * 0.08, size.height * 0.05),
+      Rect.fromLTWH(
+        size.width * 0.42,
+        size.height * 0.3,
+        size.width * 0.08,
+        size.height * 0.05,
+      ),
       accentPaint,
     );
 
     // Draw handle knob
-    canvas.drawCircle(Offset(size.width * 0.35, size.height * 0.55), 6, handlePaint);
+    canvas.drawCircle(
+      Offset(size.width * 0.35, size.height * 0.55),
+      6,
+      handlePaint,
+    );
 
     // Draw water droplets
     final dropPath = Path()
       ..moveTo(size.width * 0.46, size.height * 0.42)
       ..lineTo(size.width * 0.44, size.height * 0.48)
-      ..arcToPoint(Offset(size.width * 0.48, size.height * 0.48), radius: const Radius.circular(2))
+      ..arcToPoint(
+        Offset(size.width * 0.48, size.height * 0.48),
+        radius: const Radius.circular(2),
+      )
       ..close();
     canvas.drawPath(dropPath, waterPaint);
 
     final dropPath2 = Path()
       ..moveTo(size.width * 0.46, size.height * 0.54)
       ..lineTo(size.width * 0.44, size.height * 0.6)
-      ..arcToPoint(Offset(size.width * 0.48, size.height * 0.6), radius: const Radius.circular(2))
+      ..arcToPoint(
+        Offset(size.width * 0.48, size.height * 0.6),
+        radius: const Radius.circular(2),
+      )
       ..close();
     canvas.drawPath(dropPath2, waterPaint);
   }
@@ -910,21 +1206,36 @@ class PipesPainter extends CustomPainter {
     );
     // Vertical pipe going down
     canvas.drawRect(
-      Rect.fromLTWH(size.width * 0.5, size.height * 0.4, size.width * 0.16, size.height * 0.5),
+      Rect.fromLTWH(
+        size.width * 0.5,
+        size.height * 0.4,
+        size.width * 0.16,
+        size.height * 0.5,
+      ),
       pipePaint,
     );
 
     // Pipe joints/collars
     canvas.drawRRect(
       RRect.fromRectAndRadius(
-        Rect.fromLTWH(size.width * 0.47, size.height * 0.37, size.width * 0.22, size.height * 0.08),
+        Rect.fromLTWH(
+          size.width * 0.47,
+          size.height * 0.37,
+          size.width * 0.22,
+          size.height * 0.08,
+        ),
         const Radius.circular(3),
       ),
       jointPaint,
     );
     canvas.drawRRect(
       RRect.fromRectAndRadius(
-        Rect.fromLTWH(size.width * 0.76, size.height * 0.38, size.width * 0.08, size.height * 0.2),
+        Rect.fromLTWH(
+          size.width * 0.76,
+          size.height * 0.38,
+          size.width * 0.08,
+          size.height * 0.2,
+        ),
         const Radius.circular(3),
       ),
       jointPaint,
@@ -934,7 +1245,10 @@ class PipesPainter extends CustomPainter {
     final drop = Path()
       ..moveTo(size.width * 0.58, size.height * 0.48)
       ..lineTo(size.width * 0.55, size.height * 0.56)
-      ..arcToPoint(Offset(size.width * 0.61, size.height * 0.56), radius: const Radius.circular(3))
+      ..arcToPoint(
+        Offset(size.width * 0.61, size.height * 0.56),
+        radius: const Radius.circular(3),
+      )
       ..close();
     canvas.drawPath(drop, dropPaint);
   }
@@ -963,7 +1277,11 @@ class WrenchPainter extends CustomPainter {
     canvas.drawPath(handle, metalPaint);
 
     // Draw wrench head
-    canvas.drawCircle(Offset(size.width * 0.65, size.height * 0.45), 14, metalPaint);
+    canvas.drawCircle(
+      Offset(size.width * 0.65, size.height * 0.45),
+      14,
+      metalPaint,
+    );
 
     // Draw wrench head cutout
     final cutout = Path()

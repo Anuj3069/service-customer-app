@@ -318,7 +318,10 @@ class BookingProvider extends ChangeNotifier {
       _realtimeNotifications.where((n) => n['isRead'] != true).length;
 
   /// ── Instant Booking ─────────────────────────────────
-  Future<bool> createInstantBooking({required String serviceId}) async {
+  Future<bool> createInstantBooking({
+    required String serviceId,
+    String? promoCode,
+  }) async {
     _isLoading = true;
     _error = null;
     _instantStatus = 'searching';
@@ -339,6 +342,7 @@ class BookingProvider extends ChangeNotifier {
 
       _instantBooking = await _bookingApi.createInstantBooking(
         serviceId: serviceId,
+        promoCode: promoCode,
         customerLocation: customerLocation,
       );
       _isLoading = false;
@@ -456,7 +460,10 @@ class BookingProvider extends ChangeNotifier {
   }
 
   /// Validate a promo code against a service price
-  Future<PromoValidationResult?> validatePromoCode(String code, double price) async {
+  Future<PromoValidationResult?> validatePromoCode(
+    String code,
+    double price,
+  ) async {
     try {
       return await _bookingApi.validatePromoCode(code: code, price: price);
     } catch (e) {
