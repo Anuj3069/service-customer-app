@@ -32,13 +32,10 @@ class _RegisterScreenState extends State<RegisterScreen>
       vsync: this,
       duration: const Duration(milliseconds: 800),
     );
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.3),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _animController,
-      curve: Curves.easeOutQuart,
-    ));
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
+          CurvedAnimation(parent: _animController, curve: Curves.easeOutQuart),
+        );
     _animController.forward();
   }
 
@@ -106,16 +103,16 @@ class _RegisterScreenState extends State<RegisterScreen>
                       // Logo squircle container with double-layered border & glowing shadow
                       Center(
                         child: Container(
-                          width: 80,
-                          height: 80,
+                          width: 68,
+                          height: 68,
                           decoration: BoxDecoration(
                             gradient: AppTheme.primaryGradient,
-                            borderRadius: BorderRadius.circular(24),
+                            borderRadius: BorderRadius.circular(18),
                             boxShadow: [
                               BoxShadow(
                                 color: AppTheme.primary.withValues(alpha: 0.35),
-                                blurRadius: 28,
-                                offset: const Offset(0, 12),
+                                blurRadius: 18,
+                                offset: const Offset(0, 8),
                               ),
                             ],
                             border: Border.all(
@@ -127,22 +124,22 @@ class _RegisterScreenState extends State<RegisterScreen>
                             child: Icon(
                               Icons.person_add_rounded,
                               color: Colors.white,
-                              size: 38,
+                              size: 32,
                             ),
                           ),
                         ),
                       ),
-                      const SizedBox(height: 36),
+                      const SizedBox(height: 28),
                       // Welcome text
                       Align(
                         alignment: Alignment.center,
                         child: Text(
                           'Create Account',
                           style: GoogleFonts.outfit(
-                            fontSize: 34,
+                            fontSize: 28,
                             fontWeight: FontWeight.w800,
                             color: AppTheme.textPrimary,
-                            letterSpacing: -0.5,
+                            letterSpacing: 0,
                           ),
                         ),
                       ),
@@ -159,7 +156,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                         ),
                       ),
                       const SizedBox(height: 36),
-                      
+
                       // Form
                       Form(
                         key: _formKey,
@@ -251,7 +248,8 @@ class _RegisterScreenState extends State<RegisterScreen>
                                       size: 20,
                                     ),
                                     onPressed: () => setState(
-                                      () => _obscurePassword = !_obscurePassword,
+                                      () =>
+                                          _obscurePassword = !_obscurePassword,
                                     ),
                                   ),
                                 ),
@@ -295,10 +293,12 @@ class _RegisterScreenState extends State<RegisterScreen>
                                 return Container(
                                   width: double.infinity,
                                   decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(16),
+                                    borderRadius: BorderRadius.circular(12),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: AppTheme.primary.withValues(alpha: 0.24),
+                                        color: AppTheme.primary.withValues(
+                                          alpha: 0.24,
+                                        ),
                                         blurRadius: 18,
                                         offset: const Offset(0, 8),
                                       ),
@@ -360,7 +360,7 @@ class _RegisterScreenState extends State<RegisterScreen>
   Widget _inputWrapper({required Widget child}) {
     return Container(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
             color: AppTheme.primary.withValues(alpha: 0.04),
@@ -380,35 +380,25 @@ class _RegisterScreenState extends State<RegisterScreen>
   }) {
     return InputDecoration(
       hintText: hint,
-      prefixIcon: Icon(
-        icon,
-        color: AppTheme.textMuted,
-        size: 20,
-      ),
+      prefixIcon: Icon(icon, color: AppTheme.textMuted, size: 20),
       suffixIcon: suffix,
       fillColor: Colors.white,
       filled: true,
-      contentPadding: const EdgeInsets.symmetric(
-        horizontal: 20,
-        vertical: 18,
-      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         borderSide: BorderSide.none,
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         borderSide: BorderSide(
           color: AppTheme.primary.withValues(alpha: 0.08),
           width: 1.5,
         ),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: const BorderSide(
-          color: AppTheme.primary,
-          width: 1.8,
-        ),
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: AppTheme.primary, width: 1.8),
       ),
     );
   }

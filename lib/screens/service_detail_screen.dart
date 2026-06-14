@@ -91,7 +91,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
                     Text(
                       'Service Details',
                       style: GoogleFonts.outfit(
-                        fontSize: 22,
+                        fontSize: 18,
                         fontWeight: FontWeight.w800,
                         color: AppTheme.textPrimary,
                       ),
@@ -110,10 +110,10 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
                       // Main Illustration Card (Row based for right-side custom illustration)
                       Container(
                         width: double.infinity,
-                        padding: const EdgeInsets.all(22),
+                        padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
                           color: Colors.white,
-                          borderRadius: BorderRadius.circular(24),
+                          borderRadius: BorderRadius.circular(12),
                           border: Border.all(
                             color: AppTheme.primary.withValues(alpha: 0.05),
                           ),
@@ -135,7 +135,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
                                   Text(
                                     service.name,
                                     style: GoogleFonts.outfit(
-                                      fontSize: 24,
+                                      fontSize: 20,
                                       fontWeight: FontWeight.w800,
                                       color: AppTheme.textPrimary,
                                     ),
@@ -203,7 +203,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
                         Text(
                           'Select Date',
                           style: GoogleFonts.outfit(
-                            fontSize: 18,
+                            fontSize: 16,
                             fontWeight: FontWeight.w800,
                             color: AppTheme.textPrimary,
                           ),
@@ -596,7 +596,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
       padding: const EdgeInsets.all(5),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.82),
-        borderRadius: BorderRadius.circular(31),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(color: AppTheme.primary.withValues(alpha: 0.08)),
         boxShadow: [
           BoxShadow(
@@ -642,7 +642,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
         alignment: Alignment.center,
         decoration: BoxDecoration(
           gradient: selected ? AppTheme.primaryGradient : null,
-          borderRadius: BorderRadius.circular(28),
+          borderRadius: BorderRadius.circular(14),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -671,10 +671,10 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
     final endAt = DateTime.now().add(Duration(minutes: service.duration));
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(22),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppTheme.primary.withValues(alpha: 0.05)),
         boxShadow: [
           BoxShadow(
@@ -707,7 +707,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
               Text(
                 DateFormat('hh:mm a').format(DateTime.now()),
                 style: GoogleFonts.outfit(
-                  fontSize: 36,
+                  fontSize: 30,
                   fontWeight: FontWeight.w900,
                   color: AppTheme.textPrimary,
                 ),
@@ -891,7 +891,6 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
     final minute = parts.length > 1 ? int.tryParse(parts[1]) ?? 0 : 0;
     return DateTime(date.year, date.month, date.day, hour, minute);
   }
-
 }
 
 class FaucetPainter extends CustomPainter {

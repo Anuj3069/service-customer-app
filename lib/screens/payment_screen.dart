@@ -21,7 +21,8 @@ class PaymentScreen extends StatefulWidget {
 
 class _PaymentScreenState extends State<PaymentScreen> {
   final PaymentApiService _paymentApiService = PaymentApiService();
-  final CFPaymentGatewayService _cfPaymentGatewayService = CFPaymentGatewayService();
+  final CFPaymentGatewayService _cfPaymentGatewayService =
+      CFPaymentGatewayService();
 
   Booking? _booking;
   bool _isProcessing = false;
@@ -31,7 +32,10 @@ class _PaymentScreenState extends State<PaymentScreen> {
   void initState() {
     super.initState();
     // Configure Cashfree SDK callbacks
-    _cfPaymentGatewayService.setCallback(_verifyPaymentCallback, _onErrorCallback);
+    _cfPaymentGatewayService.setCallback(
+      _verifyPaymentCallback,
+      _onErrorCallback,
+    );
   }
 
   @override
@@ -43,7 +47,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
   /// Cashfree success callback
   void _verifyPaymentCallback(String orderId) async {
     if (_booking == null) return;
-    
+
     debugPrint('[PaymentScreen] SDK Callback success. Order ID: $orderId');
     setState(() {
       _isProcessing = true;
@@ -90,7 +94,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
   /// Cashfree error callback
   void _onErrorCallback(CFErrorResponse errorResponse, String orderId) {
-    debugPrint('[PaymentScreen] SDK Callback error. Order ID: $orderId | Code: ${errorResponse.getCode()} | Message: ${errorResponse.getMessage()}');
+    debugPrint(
+      '[PaymentScreen] SDK Callback error. Order ID: $orderId | Code: ${errorResponse.getCode()} | Message: ${errorResponse.getMessage()}',
+    );
     if (mounted) {
       setState(() {
         _isProcessing = false;
@@ -110,7 +116,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
     try {
       // 1. Call Backend to create payment order and fetch session
-      final paymentDetails = await _paymentApiService.initiatePayment(_booking!.id);
+      final paymentDetails = await _paymentApiService.initiatePayment(
+        _booking!.id,
+      );
       final String? paymentSessionId = paymentDetails['paymentSessionId'];
       final String? orderId = paymentDetails['orderId'];
 
@@ -120,7 +128,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
       // 2. Launch Cashfree SDK Web Checkout
       final session = CFSessionBuilder()
-          .setEnvironment(CFEnvironment.SANDBOX) // Set to PRODUCTION for live payments
+          .setEnvironment(
+            CFEnvironment.SANDBOX,
+          ) // Set to PRODUCTION for live payments
           .setOrderId(orderId)
           .setPaymentSessionId(paymentSessionId)
           .build();
@@ -175,9 +185,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
   Widget build(BuildContext context) {
     final booking = _booking;
     if (booking == null) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     return Scaffold(
@@ -204,7 +212,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
                         ],
                       ),
                       child: IconButton(
-                        onPressed: _isProcessing ? null : () => Navigator.pop(context),
+                        onPressed: _isProcessing
+                            ? null
+                            : () => Navigator.pop(context),
                         icon: const Icon(
                           Icons.arrow_back_rounded,
                           color: AppTheme.textPrimary,
@@ -216,7 +226,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     Text(
                       'Checkout',
                       style: GoogleFonts.outfit(
-                        fontSize: 22,
+                        fontSize: 18,
                         fontWeight: FontWeight.w800,
                         color: AppTheme.textPrimary,
                       ),
@@ -224,7 +234,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                   ],
                 ),
               ),
-              
+
               // Body content
               Expanded(
                 child: SingleChildScrollView(
@@ -235,7 +245,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     children: [
                       // Booking Card
                       GlassCard(
-                        padding: const EdgeInsets.all(24),
+                        padding: const EdgeInsets.all(16),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -251,9 +261,14 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                   ),
                                 ),
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 4,
+                                  ),
                                   decoration: BoxDecoration(
-                                    color: AppTheme.primary.withValues(alpha: 0.1),
+                                    color: AppTheme.primary.withValues(
+                                      alpha: 0.1,
+                                    ),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: Text(
@@ -276,9 +291,15 @@ class _PaymentScreenState extends State<PaymentScreen> {
                               ),
                             ),
                             const Divider(height: 32, color: Colors.black12),
-                            _detailRow('Date', booking.date?.split('T')[0] ?? ''),
+                            _detailRow(
+                              'Date',
+                              booking.date?.split('T')[0] ?? '',
+                            ),
                             _detailRow('Slot', booking.slot ?? 'Instant'),
-                            _detailRow('Booking Reference', '#${booking.id.substring(booking.id.length - 8).toUpperCase()}'),
+                            _detailRow(
+                              'Booking Reference',
+                              '#${booking.id.substring(booking.id.length - 8).toUpperCase()}',
+                            ),
                           ],
                         ),
                       ),
@@ -286,7 +307,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
                       // Price Card
                       GlassCard(
-                        padding: const EdgeInsets.all(24),
+                        padding: const EdgeInsets.all(16),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -299,7 +320,10 @@ class _PaymentScreenState extends State<PaymentScreen> {
                               ),
                             ),
                             const SizedBox(height: 16),
-                            _detailRow('Service Fee', '₹${booking.price.toInt()}'),
+                            _detailRow(
+                              'Service Fee',
+                              '₹${booking.price.toInt()}',
+                            ),
                             _detailRow('GST (18%)', 'Included'),
                             const Divider(height: 24, color: Colors.black12),
                             Row(
@@ -316,7 +340,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                 Text(
                                   '₹${booking.price.toInt()}',
                                   style: GoogleFonts.outfit(
-                                    fontSize: 20,
+                                    fontSize: 18,
                                     fontWeight: FontWeight.w800,
                                     color: AppTheme.primary,
                                   ),
@@ -336,7 +360,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
                           decoration: BoxDecoration(
                             color: AppTheme.error.withValues(alpha: 0.08),
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: AppTheme.error.withValues(alpha: 0.2)),
+                            border: Border.all(
+                              color: AppTheme.error.withValues(alpha: 0.2),
+                            ),
                           ),
                           child: Text(
                             _errorMessage!,
@@ -353,7 +379,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
                         const Center(
                           child: Column(
                             children: [
-                              CircularProgressIndicator(color: AppTheme.primary),
+                              CircularProgressIndicator(
+                                color: AppTheme.primary,
+                              ),
                               SizedBox(height: 16),
                               Text('Connecting to Payment Gateway...'),
                             ],
@@ -377,15 +405,17 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                 label: Text(
                                   'Paid by Cash',
                                   style: GoogleFonts.outfit(
-                                    fontSize: 16,
+                                    fontSize: 15,
                                     fontWeight: FontWeight.w700,
                                   ),
                                 ),
                                 style: OutlinedButton.styleFrom(
                                   foregroundColor: AppTheme.success,
-                                  side: const BorderSide(color: AppTheme.success),
+                                  side: const BorderSide(
+                                    color: AppTheme.success,
+                                  ),
                                   shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(16),
+                                    borderRadius: BorderRadius.circular(12),
                                   ),
                                 ),
                               ),
@@ -411,10 +441,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
         children: [
           Text(
             label,
-            style: GoogleFonts.inter(
-              fontSize: 13,
-              color: AppTheme.textMuted,
-            ),
+            style: GoogleFonts.inter(fontSize: 13, color: AppTheme.textMuted),
           ),
           Text(
             value,

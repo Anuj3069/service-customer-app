@@ -116,9 +116,7 @@ class _InstantBookingScreenState extends State<InstantBookingScreen>
             body: Container(
               width: double.infinity,
               decoration: const BoxDecoration(gradient: AppTheme.bgGradient),
-              child: SafeArea(
-                child: _buildContent(status, bp),
-              ),
+              child: SafeArea(child: _buildContent(status, bp)),
             ),
           ),
         );
@@ -136,8 +134,11 @@ class _InstantBookingScreenState extends State<InstantBookingScreen>
         // If somehow still on this screen when tracking, redirect
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted && bp.trackingBookingId != null) {
-            Navigator.pushNamed(context, '/live-tracking',
-                arguments: bp.trackingBookingId);
+            Navigator.pushNamed(
+              context,
+              '/live-tracking',
+              arguments: bp.trackingBookingId,
+            );
           }
         });
         return _buildConfirmedView(bp);
@@ -293,7 +294,7 @@ class _InstantBookingScreenState extends State<InstantBookingScreen>
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             decoration: BoxDecoration(
               color: AppTheme.warning.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(30),
+              borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: AppTheme.warning.withValues(alpha: 0.3),
               ),
@@ -301,8 +302,7 @@ class _InstantBookingScreenState extends State<InstantBookingScreen>
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.timer_rounded,
-                    color: AppTheme.warning, size: 20),
+                Icon(Icons.timer_rounded, color: AppTheme.warning, size: 20),
                 const SizedBox(width: 8),
                 Text(
                   'Expires in $_formattedTime',
@@ -337,10 +337,10 @@ class _InstantBookingScreenState extends State<InstantBookingScreen>
               return Transform.scale(
                 scale: value,
                 child: Container(
-                  width: 120,
-                  height: 120,
+                  width: 86,
+                  height: 86,
                   decoration: BoxDecoration(
-                    shape: BoxShape.circle,
+                    borderRadius: BorderRadius.circular(22),
                     gradient: LinearGradient(
                       colors: [
                         AppTheme.success,
@@ -350,15 +350,15 @@ class _InstantBookingScreenState extends State<InstantBookingScreen>
                     boxShadow: [
                       BoxShadow(
                         color: AppTheme.success.withValues(alpha: 0.4),
-                        blurRadius: 30,
-                        spreadRadius: 5,
+                        blurRadius: 18,
+                        spreadRadius: 2,
                       ),
                     ],
                   ),
                   child: const Icon(
                     Icons.check_rounded,
                     color: Colors.white,
-                    size: 56,
+                    size: 40,
                   ),
                 ),
               );
@@ -492,20 +492,20 @@ class _InstantBookingScreenState extends State<InstantBookingScreen>
               return Transform.scale(
                 scale: value,
                 child: Container(
-                  width: 120,
-                  height: 120,
+                  width: 86,
+                  height: 86,
                   decoration: BoxDecoration(
-                    shape: BoxShape.circle,
+                    borderRadius: BorderRadius.circular(22),
                     color: AppTheme.error.withValues(alpha: 0.1),
                     border: Border.all(
                       color: AppTheme.error.withValues(alpha: 0.3),
-                      width: 3,
+                      width: 2,
                     ),
                   ),
                   child: Icon(
                     Icons.timer_off_rounded,
                     color: AppTheme.error,
-                    size: 52,
+                    size: 40,
                   ),
                 ),
               );

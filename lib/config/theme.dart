@@ -2,16 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
-  static const Color primary = Color(0xFF4B82E8);
-  static const Color primaryLight = Color(0xFF75B8F6);
-  static const Color accent = Color(0xFF4775FF);
+  static const Color primary = Color(0xFF0B5FE8);
+  static const Color primaryLight = Color(0xFF6AA6FF);
+  static const Color accent = Color(0xFF6C55F5);
   static const Color bgDark = Color(0xFFF7F4FF);
   static const Color bgCard = Color(0xFFFFFFFF);
   static const Color bgCardLight = Color(0xFFF1EEFF);
   static const Color surface = Color(0xFFF0EDFB);
-  static const Color textPrimary = Color(0xFF252943);
-  static const Color textSecondary = Color(0xFF5D617A);
-  static const Color textMuted = Color(0xFF969BB7);
+  static const Color textPrimary = Color(0xFF151A33);
+  static const Color textSecondary = Color(0xFF596078);
+  static const Color textMuted = Color(0xFF9AA1B8);
   static const Color success = Color(0xFF36A56D);
   static const Color warning = Color(0xFFF59E0B);
   static const Color error = Color(0xFFE5484D);
@@ -22,13 +22,13 @@ class AppTheme {
   static const Color cancelled = Color(0xFF9CA3AF);
 
   static const LinearGradient primaryGradient = LinearGradient(
-    colors: [Color(0xFF64B5F6), Color(0xFF4B6FE8)],
+    colors: [Color(0xFF0968F6), Color(0xFF0046D5)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
 
   static const LinearGradient accentGradient = LinearGradient(
-    colors: [accent, Color(0xFF7E6BFF)],
+    colors: [accent, Color(0xFF2F8CFF)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
@@ -83,28 +83,28 @@ class AppTheme {
       ),
       textTheme: TextTheme(
         headlineLarge: GoogleFonts.outfit(
-          fontSize: 32,
+          fontSize: 30,
           fontWeight: FontWeight.w800,
           color: textPrimary,
         ),
         headlineMedium: GoogleFonts.outfit(
-          fontSize: 24,
-          fontWeight: FontWeight.w700,
+          fontSize: 23,
+          fontWeight: FontWeight.w800,
           color: textPrimary,
         ),
         headlineSmall: GoogleFonts.outfit(
-          fontSize: 20,
-          fontWeight: FontWeight.w700,
+          fontSize: 19,
+          fontWeight: FontWeight.w800,
           color: textPrimary,
         ),
         titleLarge: GoogleFonts.outfit(
-          fontSize: 18,
-          fontWeight: FontWeight.w700,
+          fontSize: 17,
+          fontWeight: FontWeight.w800,
           color: textPrimary,
         ),
         titleMedium: GoogleFonts.inter(
-          fontSize: 16,
-          fontWeight: FontWeight.w600,
+          fontSize: 15,
+          fontWeight: FontWeight.w700,
           color: textPrimary,
         ),
         bodyLarge: GoogleFonts.inter(
@@ -181,6 +181,14 @@ class AppTheme {
         unselectedItemColor: textMuted,
         type: BottomNavigationBarType.fixed,
         elevation: 0,
+        selectedLabelStyle: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+        ),
+        unselectedLabelStyle: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+        ),
       ),
       snackBarTheme: SnackBarThemeData(
         backgroundColor: textPrimary,

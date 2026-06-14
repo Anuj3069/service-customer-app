@@ -29,13 +29,10 @@ class _LoginScreenState extends State<LoginScreen>
       vsync: this,
       duration: const Duration(milliseconds: 800),
     );
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.3),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _animController,
-      curve: Curves.easeOutQuart,
-    ));
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
+          CurvedAnimation(parent: _animController, curve: Curves.easeOutQuart),
+        );
     _animController.forward();
   }
 
@@ -98,16 +95,16 @@ class _LoginScreenState extends State<LoginScreen>
                       // Logo squircle container with double-layered border & glowing shadow
                       Center(
                         child: Container(
-                          width: 80,
-                          height: 80,
+                          width: 68,
+                          height: 68,
                           decoration: BoxDecoration(
                             gradient: AppTheme.primaryGradient,
-                            borderRadius: BorderRadius.circular(24),
+                            borderRadius: BorderRadius.circular(18),
                             boxShadow: [
                               BoxShadow(
                                 color: AppTheme.primary.withValues(alpha: 0.35),
-                                blurRadius: 28,
-                                offset: const Offset(0, 12),
+                                blurRadius: 18,
+                                offset: const Offset(0, 8),
                               ),
                             ],
                             border: Border.all(
@@ -119,22 +116,22 @@ class _LoginScreenState extends State<LoginScreen>
                             child: Icon(
                               Icons.home_repair_service_rounded,
                               color: Colors.white,
-                              size: 38,
+                              size: 32,
                             ),
                           ),
                         ),
                       ),
-                      const SizedBox(height: 36),
+                      const SizedBox(height: 28),
                       // Welcome text
                       Align(
                         alignment: Alignment.center,
                         child: Text(
                           'Welcome Back',
                           style: GoogleFonts.outfit(
-                            fontSize: 34,
+                            fontSize: 28,
                             fontWeight: FontWeight.w800,
                             color: AppTheme.textPrimary,
-                            letterSpacing: -0.5,
+                            letterSpacing: 0,
                           ),
                         ),
                       ),
@@ -150,8 +147,8 @@ class _LoginScreenState extends State<LoginScreen>
                           ),
                         ),
                       ),
-                      const SizedBox(height: 42),
-                      
+                      const SizedBox(height: 34),
+
                       // Form
                       Form(
                         key: _formKey,
@@ -160,10 +157,12 @@ class _LoginScreenState extends State<LoginScreen>
                             // Email input with shadow and rounded HSL border
                             Container(
                               decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(16),
+                                borderRadius: BorderRadius.circular(12),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: AppTheme.primary.withValues(alpha: 0.04),
+                                    color: AppTheme.primary.withValues(
+                                      alpha: 0.04,
+                                    ),
                                     blurRadius: 16,
                                     offset: const Offset(0, 8),
                                   ),
@@ -190,18 +189,20 @@ class _LoginScreenState extends State<LoginScreen>
                                     vertical: 18,
                                   ),
                                   border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(16),
+                                    borderRadius: BorderRadius.circular(12),
                                     borderSide: BorderSide.none,
                                   ),
                                   enabledBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(16),
+                                    borderRadius: BorderRadius.circular(12),
                                     borderSide: BorderSide(
-                                      color: AppTheme.primary.withValues(alpha: 0.08),
+                                      color: AppTheme.primary.withValues(
+                                        alpha: 0.08,
+                                      ),
                                       width: 1.5,
                                     ),
                                   ),
                                   focusedBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(16),
+                                    borderRadius: BorderRadius.circular(12),
                                     borderSide: const BorderSide(
                                       color: AppTheme.primary,
                                       width: 1.8,
@@ -223,10 +224,12 @@ class _LoginScreenState extends State<LoginScreen>
                             // Password input with shadow and rounded HSL border
                             Container(
                               decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(16),
+                                borderRadius: BorderRadius.circular(12),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: AppTheme.primary.withValues(alpha: 0.04),
+                                    color: AppTheme.primary.withValues(
+                                      alpha: 0.04,
+                                    ),
                                     blurRadius: 16,
                                     offset: const Offset(0, 8),
                                   ),
@@ -255,7 +258,8 @@ class _LoginScreenState extends State<LoginScreen>
                                       size: 20,
                                     ),
                                     onPressed: () => setState(
-                                      () => _obscurePassword = !_obscurePassword,
+                                      () =>
+                                          _obscurePassword = !_obscurePassword,
                                     ),
                                   ),
                                   fillColor: Colors.white,
@@ -265,18 +269,20 @@ class _LoginScreenState extends State<LoginScreen>
                                     vertical: 18,
                                   ),
                                   border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(16),
+                                    borderRadius: BorderRadius.circular(12),
                                     borderSide: BorderSide.none,
                                   ),
                                   enabledBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(16),
+                                    borderRadius: BorderRadius.circular(12),
                                     borderSide: BorderSide(
-                                      color: AppTheme.primary.withValues(alpha: 0.08),
+                                      color: AppTheme.primary.withValues(
+                                        alpha: 0.08,
+                                      ),
                                       width: 1.5,
                                     ),
                                   ),
                                   focusedBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(16),
+                                    borderRadius: BorderRadius.circular(12),
                                     borderSide: const BorderSide(
                                       color: AppTheme.primary,
                                       width: 1.8,
@@ -298,10 +304,12 @@ class _LoginScreenState extends State<LoginScreen>
                                 return Container(
                                   width: double.infinity,
                                   decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(16),
+                                    borderRadius: BorderRadius.circular(12),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: AppTheme.primary.withValues(alpha: 0.24),
+                                        color: AppTheme.primary.withValues(
+                                          alpha: 0.24,
+                                        ),
                                         blurRadius: 18,
                                         offset: const Offset(0, 8),
                                       ),

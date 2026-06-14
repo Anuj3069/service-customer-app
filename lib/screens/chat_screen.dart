@@ -58,24 +58,33 @@ class _ChatScreenState extends State<ChatScreen> {
       if (!mounted) return;
       setState(() => _loading = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not load chat: $e'), backgroundColor: AppTheme.error),
+        SnackBar(
+          content: Text('Could not load chat: $e'),
+          backgroundColor: AppTheme.error,
+        ),
       );
     }
   }
 
   void _listenForMessages() {
     _chatSub?.cancel();
-    _chatSub = context.read<BookingProvider>().socketService.onChatMessage.listen((data) {
-      if (data['bookingId']?.toString() != _booking?.id) return;
-      final rawMessage = data['message'];
-      if (rawMessage is! Map) return;
+    _chatSub = context
+        .read<BookingProvider>()
+        .socketService
+        .onChatMessage
+        .listen((data) {
+          if (data['bookingId']?.toString() != _booking?.id) return;
+          final rawMessage = data['message'];
+          if (rawMessage is! Map) return;
 
-      final message = ChatMessage.fromJson(Map<String, dynamic>.from(rawMessage));
-      if (_messages.any((m) => m.id == message.id)) return;
+          final message = ChatMessage.fromJson(
+            Map<String, dynamic>.from(rawMessage),
+          );
+          if (_messages.any((m) => m.id == message.id)) return;
 
-      setState(() => _messages.add(message));
-      _scrollToBottom();
-    });
+          setState(() => _messages.add(message));
+          _scrollToBottom();
+        });
   }
 
   Future<void> _send() async {
@@ -98,7 +107,10 @@ class _ChatScreenState extends State<ChatScreen> {
       setState(() => _sending = false);
       _messageController.text = text;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not send message: $e'), backgroundColor: AppTheme.error),
+        SnackBar(
+          content: Text('Could not send message: $e'),
+          backgroundColor: AppTheme.error,
+        ),
       );
     }
   }
@@ -185,23 +197,27 @@ class _ChatScreenState extends State<ChatScreen> {
               ),
               Expanded(
                 child: _loading
-                    ? const Center(child: CircularProgressIndicator(color: AppTheme.primary))
+                    ? const Center(
+                        child: CircularProgressIndicator(
+                          color: AppTheme.primary,
+                        ),
+                      )
                     : _messages.isEmpty
-                        ? Center(
-                            child: Text(
-                              'No messages yet',
-                              style: GoogleFonts.inter(color: AppTheme.textMuted),
-                            ),
-                          )
-                        : ListView.builder(
-                            controller: _scrollController,
-                            padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
-                            itemCount: _messages.length,
-                            itemBuilder: (_, index) => _MessageBubble(
-                              message: _messages[index],
-                              isMine: _messages[index].senderId == _currentUserId,
-                            ),
-                          ),
+                    ? Center(
+                        child: Text(
+                          'No messages yet',
+                          style: GoogleFonts.inter(color: AppTheme.textMuted),
+                        ),
+                      )
+                    : ListView.builder(
+                        controller: _scrollController,
+                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+                        itemCount: _messages.length,
+                        itemBuilder: (_, index) => _MessageBubble(
+                          message: _messages[index],
+                          isMine: _messages[index].senderId == _currentUserId,
+                        ),
+                      ),
               ),
               _Composer(
                 controller: _messageController,
@@ -227,17 +243,21 @@ class _MessageBubble extends StatelessWidget {
     return Align(
       alignment: isMine ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
-        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.74),
+        constraints: BoxConstraints(
+          maxWidth: MediaQuery.of(context).size.width * 0.74,
+        ),
         margin: const EdgeInsets.only(bottom: 10),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
           gradient: isMine ? AppTheme.primaryGradient : null,
           color: isMine ? null : AppTheme.bgCard.withValues(alpha: 0.9),
-          borderRadius: BorderRadius.circular(16).copyWith(
-            bottomRight: Radius.circular(isMine ? 4 : 16),
-            bottomLeft: Radius.circular(isMine ? 16 : 4),
+          borderRadius: BorderRadius.circular(12).copyWith(
+            bottomRight: Radius.circular(isMine ? 4 : 12),
+            bottomLeft: Radius.circular(isMine ? 12 : 4),
           ),
-          border: isMine ? null : Border.all(color: AppTheme.textMuted.withValues(alpha: 0.12)),
+          border: isMine
+              ? null
+              : Border.all(color: AppTheme.textMuted.withValues(alpha: 0.12)),
         ),
         child: Text(
           message.message,
@@ -266,7 +286,12 @@ class _Composer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.fromLTRB(16, 12, 16, 16 + MediaQuery.of(context).padding.bottom),
+      padding: EdgeInsets.fromLTRB(
+        16,
+        12,
+        16,
+        16 + MediaQuery.of(context).padding.bottom,
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
@@ -276,7 +301,9 @@ class _Composer extends StatelessWidget {
             offset: const Offset(0, -4),
           ),
         ],
-        border: Border(top: BorderSide(color: AppTheme.primary.withValues(alpha: 0.05))),
+        border: Border(
+          top: BorderSide(color: AppTheme.primary.withValues(alpha: 0.05)),
+        ),
       ),
       child: Row(
         children: [
@@ -287,25 +314,40 @@ class _Composer extends StatelessWidget {
               maxLines: 4,
               textInputAction: TextInputAction.send,
               onSubmitted: (_) => onSend(),
-              style: GoogleFonts.inter(color: AppTheme.textPrimary, fontSize: 14),
+              style: GoogleFonts.inter(
+                color: AppTheme.textPrimary,
+                fontSize: 14,
+              ),
               decoration: InputDecoration(
                 hintText: 'Type a message...',
-                hintStyle: GoogleFonts.inter(color: AppTheme.textMuted, fontWeight: FontWeight.w500),
+                hintStyle: GoogleFonts.inter(
+                  color: AppTheme.textMuted,
+                  fontWeight: FontWeight.w500,
+                ),
                 filled: true,
                 fillColor: AppTheme.primary.withValues(alpha: 0.03),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(20),
-                  borderSide: BorderSide(color: AppTheme.primary.withValues(alpha: 0.05)),
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(
+                    color: AppTheme.primary.withValues(alpha: 0.05),
+                  ),
                 ),
                 enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(20),
-                  borderSide: BorderSide(color: AppTheme.primary.withValues(alpha: 0.05)),
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(
+                    color: AppTheme.primary.withValues(alpha: 0.05),
+                  ),
                 ),
                 focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(20),
-                  borderSide: BorderSide(color: AppTheme.primary.withValues(alpha: 0.15)),
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(
+                    color: AppTheme.primary.withValues(alpha: 0.15),
+                  ),
                 ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 18,
+                  vertical: 12,
+                ),
               ),
             ),
           ),
@@ -317,7 +359,7 @@ class _Composer extends StatelessWidget {
               height: 48,
               decoration: BoxDecoration(
                 gradient: AppTheme.primaryGradient,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
                     color: AppTheme.primary.withValues(alpha: 0.25),
@@ -331,9 +373,16 @@ class _Composer extends StatelessWidget {
                     ? const SizedBox(
                         width: 18,
                         height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
                       )
-                    : const Icon(Icons.send_rounded, size: 20, color: Colors.white),
+                    : const Icon(
+                        Icons.send_rounded,
+                        size: 20,
+                        color: Colors.white,
+                      ),
               ),
             ),
           ),

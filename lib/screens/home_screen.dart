@@ -22,6 +22,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _bookNow = true;
   Category? _selectedCategory;
 
+  // ignore: unused_element
   String _getCategoryEmoji(String name) {
     final cleanName = name.toLowerCase();
     if (cleanName.contains('plumbing')) return '🚰';
@@ -59,13 +60,13 @@ class _HomeScreenState extends State<HomeScreen> {
       return const Color(0xFFEFF7FF);
     }
     if (cleanName.contains('cleaning')) {
-      return const Color(0xFFF0EDFF);
+      return const Color(0xFFEFFBF3);
     }
     if (cleanName.contains('electric')) {
-      return const Color(0xFFFFF4E1);
+      return const Color(0xFFF0F5FF);
     }
     if (cleanName.contains('paint')) {
-      return const Color(0xFFFFF0F7);
+      return const Color(0xFFFFF2E8);
     }
     if (cleanName.contains('handyman')) {
       return const Color(0xFFFFF1E9);
@@ -75,10 +76,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Color _getCategoryIconColor(String name) {
     final cleanName = name.toLowerCase();
-    if (cleanName.contains('plumbing')) return const Color(0xFF2196F3);
-    if (cleanName.contains('cleaning')) return const Color(0xFF673AB7);
-    if (cleanName.contains('electric')) return const Color(0xFFFF9800);
-    if (cleanName.contains('paint')) return const Color(0xFFE91E63);
+    if (cleanName.contains('plumbing')) return const Color(0xFF7B3FE4);
+    if (cleanName.contains('cleaning')) return const Color(0xFF20A852);
+    if (cleanName.contains('electric')) return const Color(0xFF2F80ED);
+    if (cleanName.contains('paint')) return const Color(0xFFFF6B2C);
     if (cleanName.contains('handyman')) return const Color(0xFFFF5722);
     return const Color(0xFF3F51B5);
   }
@@ -108,13 +109,13 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.82),
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          color: Colors.white.withValues(alpha: 0.94),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
           boxShadow: [
             BoxShadow(
-              color: AppTheme.primary.withValues(alpha: 0.10),
-              blurRadius: 24,
-              offset: const Offset(0, -8),
+              color: AppTheme.primary.withValues(alpha: 0.08),
+              blurRadius: 20,
+              offset: const Offset(0, -6),
             ),
           ],
         ),
@@ -298,35 +299,35 @@ class _HomeScreenState extends State<HomeScreen> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Container(
-        height: 68,
-        padding: const EdgeInsets.all(6),
+        height: 58,
+        padding: const EdgeInsets.all(5),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.82),
-          borderRadius: BorderRadius.circular(34),
-          border: Border.all(color: AppTheme.primary.withValues(alpha: 0.14)),
+          color: Colors.white.withValues(alpha: 0.94),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: AppTheme.primary.withValues(alpha: 0.10)),
           boxShadow: [
             BoxShadow(
-              color: AppTheme.primary.withValues(alpha: 0.12),
-              blurRadius: 24,
-              offset: const Offset(0, 10),
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 16,
+              offset: const Offset(0, 8),
             ),
           ],
         ),
         child: Row(
           children: [
-            const SizedBox(width: 14),
+            const SizedBox(width: 12),
             const Icon(
               Icons.search_rounded,
-              size: 30,
+              size: 24,
               color: AppTheme.textMuted,
             ),
             const SizedBox(width: 10),
             Expanded(
               child: Text(
-                'Where to ...',
+                'Where to...',
                 style: GoogleFonts.inter(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w600,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
                   color: AppTheme.textMuted,
                 ),
               ),
@@ -348,17 +349,17 @@ class _HomeScreenState extends State<HomeScreen> {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
-        height: 56,
-        width: 88,
+        height: 48,
+        width: 74,
         alignment: Alignment.center,
         decoration: BoxDecoration(
           gradient: selected ? AppTheme.primaryGradient : null,
-          borderRadius: BorderRadius.circular(28),
+          borderRadius: BorderRadius.circular(14),
         ),
         child: Text(
           text,
           style: GoogleFonts.outfit(
-            fontSize: 20,
+            fontSize: 15,
             fontWeight: FontWeight.w800,
             color: selected ? Colors.white : AppTheme.textPrimary,
           ),
@@ -375,26 +376,36 @@ class _HomeScreenState extends State<HomeScreen> {
     ];
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.symmetric(horizontal: 6),
       child: Column(
         children: places.map((place) {
           return Container(
-            padding: const EdgeInsets.symmetric(vertical: 14),
+            margin: const EdgeInsets.symmetric(horizontal: 14),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
             decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.76),
               border: Border(
                 bottom: BorderSide(
-                  color: AppTheme.primary.withValues(alpha: 0.10),
+                  color: AppTheme.textMuted.withValues(alpha: 0.16),
                 ),
               ),
             ),
             child: Row(
               children: [
-                const Icon(
-                  Icons.history_rounded,
-                  color: AppTheme.textPrimary,
-                  size: 28,
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: AppTheme.primary.withValues(alpha: 0.10),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.location_on_rounded,
+                    color: AppTheme.primary,
+                    size: 23,
+                  ),
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: 14),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -415,7 +426,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: GoogleFonts.inter(
-                          fontSize: 14,
+                          fontSize: 12,
                           color: AppTheme.textSecondary,
                         ),
                       ),
@@ -423,11 +434,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
                 const SizedBox(width: 12),
-                const Icon(
-                  Icons.favorite_border_rounded,
-                  color: AppTheme.textPrimary,
-                  size: 28,
-                ),
+                _circleMiniIcon(Icons.schedule_rounded),
+                const SizedBox(width: 8),
+                _circleMiniIcon(Icons.favorite_border_rounded),
               ],
             ),
           );
@@ -436,16 +445,51 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Widget _circleMiniIcon(IconData icon) {
+    return Container(
+      width: 36,
+      height: 36,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        shape: BoxShape.circle,
+        border: Border.all(color: AppTheme.textMuted.withValues(alpha: 0.16)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Icon(icon, color: AppTheme.textPrimary, size: 19),
+    );
+  }
+
   Widget _buildSectionTitle(String title) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Text(
-        title,
-        style: GoogleFonts.outfit(
-          fontSize: 22,
-          fontWeight: FontWeight.w800,
-          color: AppTheme.textSecondary,
-        ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              title == 'Select Service Category' ? 'Service Categories' : title,
+              style: GoogleFonts.outfit(
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+                color: AppTheme.textPrimary,
+              ),
+            ),
+          ),
+          if (title == 'Select Service Category')
+            Text(
+              'View all  >',
+              style: GoogleFonts.inter(
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+                color: AppTheme.primary,
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -505,7 +549,7 @@ class _HomeScreenState extends State<HomeScreen> {
               crossAxisCount: 2,
               mainAxisSpacing: 14,
               crossAxisSpacing: 14,
-              childAspectRatio: 1.86,
+              childAspectRatio: 2.35,
             ),
             itemCount: serviceProvider.services.length,
             itemBuilder: (context, index) =>
@@ -521,7 +565,7 @@ class _HomeScreenState extends State<HomeScreen> {
             crossAxisCount: 2,
             mainAxisSpacing: 14,
             crossAxisSpacing: 14,
-            childAspectRatio: 1.86,
+            childAspectRatio: 2.35,
           ),
           itemCount: categories.length,
           itemBuilder: (context, index) =>
@@ -535,58 +579,66 @@ class _HomeScreenState extends State<HomeScreen> {
     final color = _getCategoryColor(category.name);
     final icon = _getCategoryIcon(category.name);
     final iconColor = _getCategoryIconColor(category.name);
-    final emoji = _getCategoryEmoji(category.name);
 
     return GestureDetector(
       onTap: () => setState(() => _selectedCategory = category),
       child: Container(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: color,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.8)),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppTheme.textMuted.withValues(alpha: 0.14)),
           boxShadow: [
             BoxShadow(
-              color: AppTheme.primary.withValues(alpha: 0.08),
-              blurRadius: 18,
-              offset: const Offset(0, 10),
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 12,
+              offset: const Offset(0, 5),
             ),
           ],
         ),
-        child: Stack(
+        child: Row(
           children: [
-            Positioned(
-              right: 0,
-              bottom: -2,
-              child: Icon(
-                icon,
-                color: iconColor.withValues(alpha: 0.35),
-                size: 44,
+            Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, color: iconColor, size: 24),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    category.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.outfit(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                      color: AppTheme.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    '${category.services.length} services',
+                    style: GoogleFonts.inter(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.textSecondary,
+                    ),
+                  ),
+                ],
               ),
             ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '${category.name} $emoji',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.outfit(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w800,
-                    color: AppTheme.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 5),
-                Text(
-                  '${category.services.length} services',
-                  style: GoogleFonts.inter(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.textSecondary,
-                  ),
-                ),
-              ],
+            const Icon(
+              Icons.chevron_right_rounded,
+              color: AppTheme.textPrimary,
+              size: 22,
             ),
           ],
         ),
@@ -1112,7 +1164,7 @@ class _HomeScreenState extends State<HomeScreen> {
             crossAxisCount: 2,
             mainAxisSpacing: 14,
             crossAxisSpacing: 14,
-            childAspectRatio: 1.86,
+            childAspectRatio: 2.35,
           ),
           itemCount: 6,
           itemBuilder: (_, __) => Container(
@@ -1131,19 +1183,19 @@ class _HomeScreenState extends State<HomeScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
         decoration: BoxDecoration(
           color: Colors.white.withValues(alpha: 0.70),
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(color: AppTheme.primary.withValues(alpha: 0.10)),
         ),
         child: Text(
-          'On your services everytym\nBook Now or Book Later',
+          'On your services everytime\nBook Now or Book Later',
           textAlign: TextAlign.center,
           style: GoogleFonts.outfit(
-            fontSize: 19,
+            fontSize: 18,
             height: 1.35,
-            fontWeight: FontWeight.w700,
+            fontWeight: FontWeight.w800,
             color: AppTheme.textSecondary,
           ),
         ),
