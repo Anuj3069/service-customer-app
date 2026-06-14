@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../config/theme.dart';
 import '../providers/booking_provider.dart';
+import '../utils/cancellation_reason_helper.dart';
 import '../widgets/gradient_button.dart';
 
 /// Full-screen waiting UI shown while an instant booking searches for a provider.
@@ -23,6 +24,7 @@ class _InstantBookingScreenState extends State<InstantBookingScreen>
 
   Timer? _countdownTimer;
   int _secondsRemaining = 300; // Default 5 minutes, synced with Redis TTL
+  bool _canceling = false;
 
   @override
   void initState() {
@@ -102,6 +104,41 @@ class _InstantBookingScreenState extends State<InstantBookingScreen>
     final min = _secondsRemaining ~/ 60;
     final sec = _secondsRemaining % 60;
     return '${min.toString().padLeft(2, '0')}:${sec.toString().padLeft(2, '0')}';
+  }
+
+  Future<void> _cancelInstantBooking(BookingProvider bp) async {
+    final booking = bp.instantBooking;
+    if (booking == null || _canceling) return;
+
+    final reason = await showCancellationReasonPicker(context);
+    if (reason == null || !mounted) return;
+
+    setState(() => _canceling = true);
+    final success = await bp.cancelBooking(
+      booking.id,
+      cancellationReason: reason,
+    );
+
+    if (!mounted) return;
+    setState(() => _canceling = false);
+
+    if (success) {
+      _countdownTimer?.cancel();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Booking request cancelled.'),
+          backgroundColor: AppTheme.success,
+        ),
+      );
+      Navigator.pop(context);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(bp.error ?? 'Failed to cancel booking request'),
+          backgroundColor: AppTheme.error,
+        ),
+      );
+    }
   }
 
   @override
@@ -314,6 +351,20 @@ class _InstantBookingScreenState extends State<InstantBookingScreen>
                 ),
               ],
             ),
+          ),
+          const SizedBox(height: 24),
+          GradientButton(
+            text: 'Cancel Request',
+            icon: Icons.cancel_rounded,
+            isLoading: _canceling,
+            gradient: const LinearGradient(
+              colors: [AppTheme.error, Color(0xFFC62828)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            onPressed: booking == null || _canceling
+                ? null
+                : () => _cancelInstantBooking(bp),
           ),
         ],
       ),

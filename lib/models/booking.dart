@@ -53,9 +53,12 @@ class Booking {
 
   factory Booking.fromJson(Map<String, dynamic> json) {
     List<double>? coords;
-    if (json['workerLocation'] != null && json['workerLocation']['coordinates'] is List) {
+    if (json['workerLocation'] != null &&
+        json['workerLocation']['coordinates'] is List) {
       coords = List<double>.from(
-        (json['workerLocation']['coordinates'] as List).map((x) => (x as num).toDouble()),
+        (json['workerLocation']['coordinates'] as List).map(
+          (x) => (x as num).toDouble(),
+        ),
       );
     }
 
@@ -89,15 +92,20 @@ class Booking {
       serviceDetails: json['serviceId'] is Map ? json['serviceId'] : null,
       providerDetails: json['providerId'] is Map ? json['providerId'] : null,
       workerLocationCoordinates: coords,
-      originalPrice: json['originalPrice'] != null ? (json['originalPrice'] as num).toDouble() : null,
+      originalPrice: json['originalPrice'] != null
+          ? (json['originalPrice'] as num).toDouble()
+          : null,
     );
   }
 
   bool get isInstant => type == 'INSTANT';
   bool get isRequested => status == 'requested';
+  bool get isPending => status == 'pending';
   bool get isExpired => status == 'expired';
   bool get isAccepted => status == 'accepted';
   bool get isCompleted => status == 'completed';
+  bool get isCancelled => status == 'cancelled';
+  bool get canCancel => isRequested || isPending;
 
   String get serviceName => serviceDetails?['name'] ?? 'Service';
   String get providerName {

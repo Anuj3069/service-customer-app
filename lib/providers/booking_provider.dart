@@ -318,9 +318,7 @@ class BookingProvider extends ChangeNotifier {
       _realtimeNotifications.where((n) => n['isRead'] != true).length;
 
   /// ── Instant Booking ─────────────────────────────────
-  Future<bool> createInstantBooking({
-    required String serviceId,
-  }) async {
+  Future<bool> createInstantBooking({required String serviceId}) async {
     _isLoading = true;
     _error = null;
     _instantStatus = 'searching';
@@ -532,6 +530,42 @@ class BookingProvider extends ChangeNotifier {
       _error = e.toString();
       _isLoading = false;
       notifyListeners();
+    }
+  }
+
+  /// Cancel a requested/pending booking
+  Future<bool> cancelBooking(String id, {String? cancellationReason}) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final booking = await _bookingApi.cancelBooking(
+        id,
+        cancellationReason: cancellationReason,
+      );
+
+      _selectedBooking = booking;
+      _bookings = _bookings
+          .map((existing) => existing.id == booking.id ? booking : existing)
+          .toList();
+
+      if (_instantBooking?.id == booking.id) {
+        _instantBooking = null;
+        _instantStatus = 'idle';
+        _confirmedProvider = null;
+      }
+
+      _successMessage = 'Booking cancelled successfully.';
+      _isLoading = false;
+      notifyListeners();
+      fetchBookings();
+      return true;
+    } catch (e) {
+      _error = e.toString();
+      _isLoading = false;
+      notifyListeners();
+      return false;
     }
   }
 
