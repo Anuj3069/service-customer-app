@@ -6,6 +6,8 @@ class ApiConfig {
   // Auth
   static const String login = '/auth/login';
   static const String register = '/auth/register';
+  static const String sendOtp = '/auth/otp/send';
+  static const String verifyOtp = '/auth/otp/verify';
 
   // Services
   static const String services = '/user/services';

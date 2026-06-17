@@ -102,6 +102,47 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Send OTP
+  Future<bool> sendOtp({required String email}) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+    try {
+      await _authService.sendOtp(email: email);
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _error = e.toString();
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// Verify OTP
+  Future<bool> verifyOtp({required String email, required String otp}) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+    try {
+      final AuthResponse result = await _authService.verifyOtp(
+        email: email,
+        otp: otp,
+      );
+      _user = result.user;
+      _isAuthenticated = true;
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _error = e.toString();
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
   void clearError() {
     _error = null;
     notifyListeners();
