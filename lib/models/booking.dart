@@ -23,6 +23,13 @@ class Booking {
   final Map<String, dynamic>? providerDetails;
   final List<double>? workerLocationCoordinates;
   final double? originalPrice;
+  // Enhanced customer location fields
+  final String? customerAddress;
+  final String? customerFullAddress;
+  final String? customerAddressLine2;
+  final String? customerAddressLabel;
+  final String? customerAddressId;
+  final List<double>? customerLocationCoordinates;
 
   Booking({
     required this.id,
@@ -49,6 +56,12 @@ class Booking {
     this.providerDetails,
     this.workerLocationCoordinates,
     this.originalPrice,
+    this.customerAddress,
+    this.customerFullAddress,
+    this.customerAddressLine2,
+    this.customerAddressLabel,
+    this.customerAddressId,
+    this.customerLocationCoordinates,
   });
 
   factory Booking.fromJson(Map<String, dynamic> json) {
@@ -95,6 +108,18 @@ class Booking {
       originalPrice: json['originalPrice'] != null
           ? (json['originalPrice'] as num).toDouble()
           : null,
+      customerAddress: json['customerLocation']?['address'],
+      customerFullAddress: json['customerLocation']?['fullAddress'],
+      customerAddressLine2: json['customerLocation']?['addressLine2'],
+      customerAddressLabel: json['customerLocation']?['label'],
+      customerAddressId: json['customerLocation']?['addressId'],
+      customerLocationCoordinates: json['customerLocation']?['coordinates'] is List
+          ? List<double>.from(
+              (json['customerLocation']['coordinates'] as List).map(
+                (x) => (x as num).toDouble(),
+              ),
+            )
+          : null,
     );
   }
 
@@ -113,5 +138,20 @@ class Booking {
       return providerDetails!['userId']['name'] ?? 'Provider';
     }
     return 'Provider';
+  }
+
+  /// Display-friendly address string for the booking location
+  String get customerLocationDisplay {
+    if (customerFullAddress != null && customerFullAddress!.isNotEmpty) {
+      final label = customerAddressLabel != null
+          ? '${customerAddressLabel![0].toUpperCase()}${customerAddressLabel!.substring(1)}'
+          : null;
+      if (label != null) return '$label • $customerFullAddress';
+      return customerFullAddress!;
+    }
+    if (customerAddress != null && customerAddress!.isNotEmpty) {
+      return customerAddress!;
+    }
+    return 'Location not set';
   }
 }

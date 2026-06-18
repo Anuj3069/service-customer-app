@@ -36,4 +36,10 @@ class ApiConfig {
   static String payBooking(String id) => '/user/bookings/$id/pay';
   static String payBookingCash(String id) => '/user/bookings/$id/pay-cash';
   static String verifyPayment(String id) => '/payments/$id/verify';
+
+  // Addresses
+  static const String addresses = '/user/addresses';
+  static const String defaultAddress = '/user/addresses/default';
+  static String addressById(String id) => '/user/addresses/$id';
+  static String setDefaultAddress(String id) => '/user/addresses/$id/default';
 }

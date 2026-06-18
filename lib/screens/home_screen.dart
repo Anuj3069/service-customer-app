@@ -7,6 +7,7 @@ import '../models/service.dart';
 import '../providers/auth_provider.dart';
 import '../providers/booking_provider.dart';
 import '../providers/service_provider.dart' as sp;
+import '../providers/address_provider.dart';
 import '../widgets/connection_banner.dart';
 import '../widgets/notification_panel.dart';
 
@@ -89,6 +90,7 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<sp.ServiceProvider>().fetchServices();
+      context.read<AddressProvider>().fetchAddresses();
     });
   }
 
@@ -298,47 +300,80 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildSearchToggle() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Container(
-        height: 58,
-        padding: const EdgeInsets.all(5),
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.94),
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: AppTheme.primary.withValues(alpha: 0.10)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 16,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            const SizedBox(width: 12),
-            const Icon(
-              Icons.search_rounded,
-              size: 24,
-              color: AppTheme.textMuted,
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                'Where to...',
-                style: GoogleFonts.inter(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                  color: AppTheme.textMuted,
+      child: GestureDetector(
+        onTap: () => Navigator.pushNamed(context, '/address-search'),
+        child: Container(
+          height: 58,
+          padding: const EdgeInsets.all(5),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.94),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: AppTheme.primary.withValues(alpha: 0.10)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 16,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              const SizedBox(width: 12),
+              const Icon(
+                Icons.search_rounded,
+                size: 24,
+                color: AppTheme.textMuted,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Consumer<AddressProvider>(
+                  builder: (context, ap, _) {
+                    final selected = ap.selectedAddress;
+                    if (selected != null) {
+                      return Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            selected.displayLabel,
+                            style: GoogleFonts.outfit(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w800,
+                              color: AppTheme.textPrimary,
+                            ),
+                          ),
+                          Text(
+                            selected.shortAddress,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: GoogleFonts.inter(
+                              fontSize: 11,
+                              color: AppTheme.textMuted,
+                            ),
+                          ),
+                        ],
+                      );
+                    }
+                    return Text(
+                      'Where to...',
+                      style: GoogleFonts.inter(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: AppTheme.textMuted,
+                      ),
+                    );
+                  },
                 ),
               ),
-            ),
-            _togglePill('Now', _bookNow, () => setState(() => _bookNow = true)),
-            _togglePill(
-              'Later',
-              !_bookNow,
-              () => setState(() => _bookNow = false),
-            ),
-          ],
+              _togglePill('Now', _bookNow, () => setState(() => _bookNow = true)),
+              _togglePill(
+                'Later',
+                !_bookNow,
+                () => setState(() => _bookNow = false),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -369,101 +404,199 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildRecentPlaces() {
-    final places = [
-      ('Howrah Railway Station', 'Howrah, West Bengal 711101, India'),
-      ('Airport Service Rd', 'International Airport, Dum Dum, Kolkata'),
-      ('Metro station', 'Sealdah, Raja Bazar, Kolkata, West Be...'),
-    ];
+    return Consumer<AddressProvider>(
+      builder: (context, ap, _) {
+        final addrs = ap.addresses;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 6),
-      child: Column(
-        children: places.map((place) {
-          return Container(
-            margin: const EdgeInsets.symmetric(horizontal: 14),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.76),
-              border: Border(
-                bottom: BorderSide(
-                  color: AppTheme.textMuted.withValues(alpha: 0.16),
+        if (addrs.isEmpty) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: GestureDetector(
+              onTap: () => Navigator.pushNamed(context, '/address-search'),
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.76),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: AppTheme.primary.withValues(alpha: 0.15)),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 42,
+                      height: 42,
+                      decoration: BoxDecoration(
+                        color: AppTheme.primary.withValues(alpha: 0.10),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.add_location_alt_rounded,
+                        color: AppTheme.primary,
+                        size: 22,
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Add Your First Address',
+                            style: GoogleFonts.outfit(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                              color: AppTheme.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Save addresses for faster bookings',
+                            style: GoogleFonts.inter(
+                              fontSize: 12,
+                              color: AppTheme.textMuted,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
-            child: Row(
-              children: [
-                Container(
-                  width: 42,
-                  height: 42,
+          );
+        }
+
+        // Show up to 3 saved addresses
+        final displayAddrs = addrs.take(3).toList();
+
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 6),
+          child: Column(
+            children: displayAddrs.map((addr) {
+              return GestureDetector(
+                onTap: () {
+                  ap.selectAddress(addr);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('📍 ${addr.displayLabel} selected'),
+                      backgroundColor: AppTheme.success,
+                      duration: const Duration(seconds: 1),
+                    ),
+                  );
+                },
+                child: Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 14),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                   decoration: BoxDecoration(
-                    color: AppTheme.primary.withValues(alpha: 0.10),
-                    borderRadius: BorderRadius.circular(12),
+                    color: ap.selectedAddress?.id == addr.id
+                        ? AppTheme.primary.withValues(alpha: 0.05)
+                        : Colors.white.withValues(alpha: 0.76),
+                    border: Border(
+                      bottom: BorderSide(
+                        color: AppTheme.textMuted.withValues(alpha: 0.16),
+                      ),
+                    ),
                   ),
-                  child: const Icon(
-                    Icons.location_on_rounded,
-                    color: AppTheme.primary,
-                    size: 23,
-                  ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  child: Row(
                     children: [
-                      Text(
-                        place.$1,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.outfit(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
-                          color: AppTheme.textPrimary,
+                      Container(
+                        width: 42,
+                        height: 42,
+                        decoration: BoxDecoration(
+                          color: _getAddressColor(addr.label).withValues(alpha: 0.10),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(
+                          _getAddressIcon(addr.label),
+                          color: _getAddressColor(addr.label),
+                          size: 23,
                         ),
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        place.$2,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.inter(
-                          fontSize: 12,
-                          color: AppTheme.textSecondary,
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Text(
+                                  addr.displayLabel,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: GoogleFonts.outfit(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w800,
+                                    color: AppTheme.textPrimary,
+                                  ),
+                                ),
+                                if (addr.isDefault) ...[
+                                  const SizedBox(width: 8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: AppTheme.success.withValues(alpha: 0.1),
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: Text(
+                                      'Default',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 9,
+                                        fontWeight: FontWeight.w700,
+                                        color: AppTheme.success,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              addr.shortAddress,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: GoogleFonts.inter(
+                                fontSize: 12,
+                                color: AppTheme.textSecondary,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
+                      if (ap.selectedAddress?.id == addr.id)
+                        const Icon(
+                          Icons.check_circle_rounded,
+                          color: AppTheme.primary,
+                          size: 20,
+                        ),
                     ],
                   ),
                 ),
-                const SizedBox(width: 12),
-                _circleMiniIcon(Icons.schedule_rounded),
-                const SizedBox(width: 8),
-                _circleMiniIcon(Icons.favorite_border_rounded),
-              ],
-            ),
-          );
-        }).toList(),
-      ),
+              );
+            }).toList(),
+          ),
+        );
+      },
     );
   }
 
-  Widget _circleMiniIcon(IconData icon) {
-    return Container(
-      width: 36,
-      height: 36,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        shape: BoxShape.circle,
-        border: Border.all(color: AppTheme.textMuted.withValues(alpha: 0.16)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Icon(icon, color: AppTheme.textPrimary, size: 19),
-    );
+  IconData _getAddressIcon(String label) {
+    switch (label) {
+      case 'home': return Icons.home_rounded;
+      case 'work': return Icons.work_rounded;
+      default: return Icons.location_on_rounded;
+    }
   }
+
+  Color _getAddressColor(String label) {
+    switch (label) {
+      case 'home': return AppTheme.primary;
+      case 'work': return AppTheme.accent;
+      default: return AppTheme.success;
+    }
+  }
+
+
 
   Widget _buildSectionTitle(String title) {
     return Padding(
@@ -1283,6 +1416,13 @@ class _HomeScreenState extends State<HomeScreen> {
                   () => Navigator.pushNamed(context, '/bookings'),
                   iconBgColor: const Color(0xFFEFF7FF),
                   iconColor: AppTheme.primary,
+                ),
+                _buildProfileOption(
+                  Icons.location_on_rounded,
+                  'Saved Addresses',
+                  () => Navigator.pushNamed(context, '/saved-addresses'),
+                  iconBgColor: const Color(0xFFF1EEFF),
+                  iconColor: AppTheme.accent,
                 ),
                 _buildProfileOption(
                   Icons.star_rounded,

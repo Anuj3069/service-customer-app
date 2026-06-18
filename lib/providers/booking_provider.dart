@@ -318,7 +318,10 @@ class BookingProvider extends ChangeNotifier {
       _realtimeNotifications.where((n) => n['isRead'] != true).length;
 
   /// ── Instant Booking ─────────────────────────────────
-  Future<bool> createInstantBooking({required String serviceId}) async {
+  Future<bool> createInstantBooking({
+    required String serviceId,
+    Map<String, dynamic>? customerLocation,
+  }) async {
     _isLoading = true;
     _error = null;
     _instantStatus = 'searching';
@@ -326,20 +329,22 @@ class BookingProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      Map<String, dynamic>? customerLocation;
-      try {
-        final pos = await LocationHelper.getCurrentLocation();
-        if (pos != null) {
-          customerLocation = {
-            'coordinates': [pos.longitude, pos.latitude],
-            'address': 'Current Location',
-          };
-        }
-      } catch (_) {}
+      Map<String, dynamic>? locData = customerLocation;
+      if (locData == null) {
+        try {
+          final pos = await LocationHelper.getCurrentLocation();
+          if (pos != null) {
+            locData = {
+              'coordinates': [pos.longitude, pos.latitude],
+              'address': 'Current Location',
+            };
+          }
+        } catch (_) {}
+      }
 
       _instantBooking = await _bookingApi.createInstantBooking(
         serviceId: serviceId,
-        customerLocation: customerLocation,
+        customerLocation: locData,
       );
       _isLoading = false;
       notifyListeners();
@@ -413,7 +418,7 @@ class BookingProvider extends ChangeNotifier {
   }
 
   /// Create a new booking from match result
-  Future<bool> createBooking() async {
+  Future<bool> createBooking({Map<String, dynamic>? customerLocation}) async {
     if (_matchResult == null) return false;
 
     _isLoading = true;
@@ -421,16 +426,18 @@ class BookingProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      Map<String, dynamic>? customerLocation;
-      try {
-        final pos = await LocationHelper.getCurrentLocation();
-        if (pos != null) {
-          customerLocation = {
-            'coordinates': [pos.longitude, pos.latitude],
-            'address': 'Current Location',
-          };
-        }
-      } catch (_) {}
+      Map<String, dynamic>? locData = customerLocation;
+      if (locData == null) {
+        try {
+          final pos = await LocationHelper.getCurrentLocation();
+          if (pos != null) {
+            locData = {
+              'coordinates': [pos.longitude, pos.latitude],
+              'address': 'Current Location',
+            };
+          }
+        } catch (_) {}
+      }
 
       final booking = await _bookingApi.createBooking(
         providerId: _matchResult!.provider.id,
@@ -438,7 +445,7 @@ class BookingProvider extends ChangeNotifier {
         date: _matchResult!.date,
         slot: _matchResult!.slot,
         price: _matchResult!.price,
-        customerLocation: customerLocation,
+        customerLocation: locData,
       );
       _selectedBooking = booking;
       _successMessage = 'Booking created successfully!';
@@ -461,22 +468,25 @@ class BookingProvider extends ChangeNotifier {
     required String date,
     required String slot,
     required double price,
+    Map<String, dynamic>? customerLocation,
   }) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     try {
-      Map<String, dynamic>? customerLocation;
-      try {
-        final pos = await LocationHelper.getCurrentLocation();
-        if (pos != null) {
-          customerLocation = {
-            'coordinates': [pos.longitude, pos.latitude],
-            'address': 'Current Location',
-          };
-        }
-      } catch (_) {}
+      Map<String, dynamic>? locData = customerLocation;
+      if (locData == null) {
+        try {
+          final pos = await LocationHelper.getCurrentLocation();
+          if (pos != null) {
+            locData = {
+              'coordinates': [pos.longitude, pos.latitude],
+              'address': 'Current Location',
+            };
+          }
+        } catch (_) {}
+      }
 
       final booking = await _bookingApi.createBooking(
         providerId: providerId,
@@ -484,7 +494,7 @@ class BookingProvider extends ChangeNotifier {
         date: date,
         slot: slot,
         price: price,
-        customerLocation: customerLocation,
+        customerLocation: locData,
       );
       _selectedBooking = booking;
       _successMessage = 'Booking created successfully!';

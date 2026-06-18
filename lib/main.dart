@@ -6,6 +6,7 @@ import 'config/theme.dart';
 import 'providers/auth_provider.dart';
 import 'providers/service_provider.dart' as sp;
 import 'providers/booking_provider.dart';
+import 'providers/address_provider.dart';
 import 'screens/splash_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
@@ -21,6 +22,9 @@ import 'screens/nearby_workers_screen.dart';
 import 'screens/chat_screen.dart';
 import 'screens/payment_screen.dart';
 import 'screens/payment_result_screen.dart';
+import 'screens/address_search_screen.dart';
+import 'screens/saved_addresses_screen.dart';
+import 'screens/add_edit_address_screen.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -45,6 +49,7 @@ class AirveatCustomerApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => sp.ServiceProvider()),
         ChangeNotifierProvider(create: (_) => BookingProvider()),
+        ChangeNotifierProvider(create: (_) => AddressProvider()),
       ],
       child: MaterialApp(
         title: 'Airveat - Book Services',
@@ -68,6 +73,9 @@ class AirveatCustomerApp extends StatelessWidget {
           '/chat': (context) => const ChatScreen(),
           '/payment': (context) => const PaymentScreen(),
           '/payment-result': (context) => const PaymentResultScreen(),
+          '/address-search': (context) => const AddressSearchScreen(),
+          '/saved-addresses': (context) => const SavedAddressesScreen(),
+          '/add-address': (context) => const AddEditAddressScreen(),
         },
       ),
     );

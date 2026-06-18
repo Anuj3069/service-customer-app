@@ -180,6 +180,28 @@ class ApiClient {
     }
   }
 
+  static Future<Map<String, dynamic>> delete(
+    String endpoint, {
+    bool auth = true,
+  }) async {
+    final url = Uri.parse('${ApiConfig.baseUrl}$endpoint');
+    try {
+      var headers = await _headers(auth: auth);
+      var response = await http.delete(url, headers: headers);
+
+      if (response.statusCode == 401 && auth) {
+        final refreshed = await _attemptRefresh();
+        if (refreshed) {
+          headers = await _headers(auth: auth);
+          response = await http.delete(url, headers: headers);
+        }
+      }
+      return _handleResponse(response);
+    } catch (err) {
+      throw ApiException('Network error. Please check your connection.', 0);
+    }
+  }
+
   // ── Response Handler ──────────────────────────────
   static Map<String, dynamic> _handleResponse(http.Response response) {
     Map<String, dynamic>? body;

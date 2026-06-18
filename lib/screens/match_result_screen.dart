@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../config/theme.dart';
 import '../providers/booking_provider.dart';
+import '../providers/address_provider.dart';
 import '../widgets/gradient_button.dart';
 import '../widgets/glass_card.dart';
 
@@ -19,7 +20,9 @@ class _MatchResultScreenState extends State<MatchResultScreen> {
     final messenger = ScaffoldMessenger.of(context);
     final navigator = Navigator.of(context);
 
-    final success = await bookingProvider.createBooking();
+    final success = await bookingProvider.createBooking(
+      customerLocation: context.read<AddressProvider>().selectedAddress?.toCustomerLocation(),
+    );
 
     if (!mounted) return;
 

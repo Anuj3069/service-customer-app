@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../config/theme.dart';
 import '../models/service.dart';
 import '../providers/booking_provider.dart';
+import '../providers/address_provider.dart';
 import '../widgets/gradient_button.dart';
 
 class ServiceDetailScreen extends StatefulWidget {
@@ -490,6 +491,152 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
                         const SizedBox(height: 30),
                       ],
 
+                      // ── Selected Address Card ───────────────────
+                      Consumer<AddressProvider>(
+                        builder: (context, ap, _) {
+                          return Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(14),
+                            margin: const EdgeInsets.only(bottom: 20),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: ap.selectedAddress != null
+                                    ? AppTheme.primary.withValues(alpha: 0.15)
+                                    : AppTheme.warning.withValues(alpha: 0.3),
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.03),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 3),
+                                ),
+                              ],
+                            ),
+                            child: ap.selectedAddress != null
+                                ? Row(
+                                    children: [
+                                      Container(
+                                        width: 40,
+                                        height: 40,
+                                        decoration: BoxDecoration(
+                                          color: AppTheme.primary.withValues(alpha: 0.08),
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        child: const Icon(
+                                          Icons.location_on_rounded,
+                                          color: AppTheme.primary,
+                                          size: 22,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              'Service at',
+                                              style: GoogleFonts.inter(
+                                                fontSize: 11,
+                                                color: AppTheme.textMuted,
+                                              ),
+                                            ),
+                                            Text(
+                                              ap.selectedAddress!.displayLabel,
+                                              style: GoogleFonts.outfit(
+                                                fontSize: 15,
+                                                fontWeight: FontWeight.w700,
+                                                color: AppTheme.textPrimary,
+                                              ),
+                                            ),
+                                            Text(
+                                              ap.selectedAddress!.shortAddress,
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: GoogleFonts.inter(
+                                                fontSize: 12,
+                                                color: AppTheme.textSecondary,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      GestureDetector(
+                                        onTap: () => Navigator.pushNamed(
+                                            context, '/address-search'),
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 12, vertical: 6),
+                                          decoration: BoxDecoration(
+                                            color: AppTheme.primary.withValues(alpha: 0.08),
+                                            borderRadius: BorderRadius.circular(10),
+                                          ),
+                                          child: Text(
+                                            'Change',
+                                            style: GoogleFonts.inter(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w700,
+                                              color: AppTheme.primary,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  )
+                                : GestureDetector(
+                                    onTap: () => Navigator.pushNamed(
+                                        context, '/address-search'),
+                                    child: Row(
+                                      children: [
+                                        Container(
+                                          width: 40,
+                                          height: 40,
+                                          decoration: BoxDecoration(
+                                            color: AppTheme.warning.withValues(alpha: 0.1),
+                                            borderRadius: BorderRadius.circular(12),
+                                          ),
+                                          child: const Icon(
+                                            Icons.add_location_alt_rounded,
+                                            color: AppTheme.warning,
+                                            size: 22,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                'Select Service Address',
+                                                style: GoogleFonts.outfit(
+                                                  fontSize: 15,
+                                                  fontWeight: FontWeight.w700,
+                                                  color: AppTheme.warning,
+                                                ),
+                                              ),
+                                              Text(
+                                                'Tap to choose or add an address',
+                                                style: GoogleFonts.inter(
+                                                  fontSize: 12,
+                                                  color: AppTheme.textMuted,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        Icon(
+                                          Icons.arrow_forward_ios_rounded,
+                                          size: 16,
+                                          color: AppTheme.warning.withValues(alpha: 0.5),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                          );
+                        },
+                      ),
+
                       // Sleek Booking Buttons
                       Consumer<BookingProvider>(
                         builder: (context, bookingProvider, _) {
@@ -835,10 +982,24 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
   }
 
   Future<void> _requestInstantBooking(Service service) async {
+    // Gate: require address
+    final ap = context.read<AddressProvider>();
+    if (ap.selectedAddress == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select a service address first'),
+          backgroundColor: AppTheme.warning,
+        ),
+      );
+      Navigator.pushNamed(context, '/address-search');
+      return;
+    }
+
     final bookingProvider = context.read<BookingProvider>();
 
     final success = await bookingProvider.createInstantBooking(
       serviceId: service.id,
+      customerLocation: ap.selectedAddress!.toCustomerLocation(),
     );
 
     if (!mounted) return;
@@ -856,6 +1017,19 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
   }
 
   Future<void> _createDirectBooking(Service service) async {
+    // Gate: require address
+    final ap = context.read<AddressProvider>();
+    if (ap.selectedAddress == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select a service address first'),
+          backgroundColor: AppTheme.warning,
+        ),
+      );
+      Navigator.pushNamed(context, '/address-search');
+      return;
+    }
+
     final bookingProvider = context.read<BookingProvider>();
     final bookingDate = _dateWithSlotStart(_selectedDate!, _selectedSlot!);
 
