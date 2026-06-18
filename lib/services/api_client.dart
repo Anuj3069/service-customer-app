@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -9,6 +10,9 @@ class ApiClient {
   static const String _tokenKey = 'access_token';
   static const String _refreshKey = 'refresh_token';
   static const String _userKey = 'user_data';
+  static const Duration _requestTimeout = Duration(seconds: 30);
+  static const String _networkErrorMessage =
+      'Network error. Please check your connection.';
 
   // ── Token Management ─────────────────────────────
   static Future<void> saveTokens(
@@ -103,18 +107,28 @@ class ApiClient {
     final url = Uri.parse('${ApiConfig.baseUrl}$endpoint');
     try {
       var headers = await _headers(auth: auth);
-      var response = await http.get(url, headers: headers);
+      var response = await http
+          .get(url, headers: headers)
+          .timeout(_requestTimeout);
 
       if (response.statusCode == 401 && auth) {
         final refreshed = await _attemptRefresh();
         if (refreshed) {
           headers = await _headers(auth: auth);
-          response = await http.get(url, headers: headers);
+          response = await http
+              .get(url, headers: headers)
+              .timeout(_requestTimeout);
         }
       }
       return _handleResponse(response);
-    } catch (err) {
-      throw ApiException('Network error. Please check your connection.', 0);
+    } on ApiException {
+      rethrow;
+    } on TimeoutException {
+      throw ApiException(_networkErrorMessage, 0);
+    } on http.ClientException {
+      throw ApiException(_networkErrorMessage, 0);
+    } catch (_) {
+      throw ApiException('Something went wrong', 0);
     }
   }
 
@@ -130,7 +144,7 @@ class ApiClient {
         url,
         headers: headers,
         body: jsonEncode(body),
-      );
+      ).timeout(_requestTimeout);
 
       if (response.statusCode == 401 && auth) {
         final refreshed = await _attemptRefresh();
@@ -140,12 +154,18 @@ class ApiClient {
             url,
             headers: headers,
             body: jsonEncode(body),
-          );
+          ).timeout(_requestTimeout);
         }
       }
       return _handleResponse(response);
-    } catch (err) {
-      throw ApiException('Network error. Please check your connection.', 0);
+    } on ApiException {
+      rethrow;
+    } on TimeoutException {
+      throw ApiException(_networkErrorMessage, 0);
+    } on http.ClientException {
+      throw ApiException(_networkErrorMessage, 0);
+    } catch (_) {
+      throw ApiException('Something went wrong', 0);
     }
   }
 
@@ -161,7 +181,7 @@ class ApiClient {
         url,
         headers: headers,
         body: jsonEncode(body),
-      );
+      ).timeout(_requestTimeout);
 
       if (response.statusCode == 401 && auth) {
         final refreshed = await _attemptRefresh();
@@ -171,12 +191,18 @@ class ApiClient {
             url,
             headers: headers,
             body: jsonEncode(body),
-          );
+          ).timeout(_requestTimeout);
         }
       }
       return _handleResponse(response);
-    } catch (err) {
-      throw ApiException('Network error. Please check your connection.', 0);
+    } on ApiException {
+      rethrow;
+    } on TimeoutException {
+      throw ApiException(_networkErrorMessage, 0);
+    } on http.ClientException {
+      throw ApiException(_networkErrorMessage, 0);
+    } catch (_) {
+      throw ApiException('Something went wrong', 0);
     }
   }
 
@@ -187,18 +213,28 @@ class ApiClient {
     final url = Uri.parse('${ApiConfig.baseUrl}$endpoint');
     try {
       var headers = await _headers(auth: auth);
-      var response = await http.delete(url, headers: headers);
+      var response = await http
+          .delete(url, headers: headers)
+          .timeout(_requestTimeout);
 
       if (response.statusCode == 401 && auth) {
         final refreshed = await _attemptRefresh();
         if (refreshed) {
           headers = await _headers(auth: auth);
-          response = await http.delete(url, headers: headers);
+          response = await http
+              .delete(url, headers: headers)
+              .timeout(_requestTimeout);
         }
       }
       return _handleResponse(response);
-    } catch (err) {
-      throw ApiException('Network error. Please check your connection.', 0);
+    } on ApiException {
+      rethrow;
+    } on TimeoutException {
+      throw ApiException(_networkErrorMessage, 0);
+    } on http.ClientException {
+      throw ApiException(_networkErrorMessage, 0);
+    } catch (_) {
+      throw ApiException('Something went wrong', 0);
     }
   }
 
