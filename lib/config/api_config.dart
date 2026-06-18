@@ -6,6 +6,8 @@ class ApiConfig {
   // Auth
   static const String login = '/auth/login';
   static const String register = '/auth/register';
+  static const String sendOtp = '/auth/otp/send';
+  static const String verifyOtp = '/auth/otp/verify';
 
   // Services
   static const String services = '/user/services';
@@ -17,6 +19,7 @@ class ApiConfig {
   // Bookings
   static const String bookings = '/user/bookings';
   static String bookingById(String id) => '/user/bookings/$id';
+  static String cancelBooking(String id) => '/user/bookings/$id/cancel';
   static String bookingOtp(String id) => '/user/bookings/$id/otp';
   static String bookingChat(String id) => '/user/bookings/$id/chat';
 

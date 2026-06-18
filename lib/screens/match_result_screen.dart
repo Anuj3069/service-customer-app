@@ -6,8 +6,40 @@ import '../providers/booking_provider.dart';
 import '../widgets/gradient_button.dart';
 import '../widgets/glass_card.dart';
 
-class MatchResultScreen extends StatelessWidget {
+class MatchResultScreen extends StatefulWidget {
   const MatchResultScreen({super.key});
+
+  @override
+  State<MatchResultScreen> createState() => _MatchResultScreenState();
+}
+
+class _MatchResultScreenState extends State<MatchResultScreen> {
+  Future<void> _confirmBooking(BuildContext context) async {
+    final bookingProvider = context.read<BookingProvider>();
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+
+    final success = await bookingProvider.createBooking();
+
+    if (!mounted) return;
+
+    if (success) {
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('Booking confirmed successfully!'),
+          backgroundColor: Color(0xFF00C853),
+        ),
+      );
+      navigator.pushReplacementNamed('/booking-detail');
+    } else {
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(bookingProvider.error ?? 'Failed to confirm booking'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -20,8 +52,10 @@ class MatchResultScreen extends StatelessWidget {
               final match = bookingProvider.matchResult;
               if (match == null) {
                 return const Center(
-                  child: Text('No match data',
-                      style: TextStyle(color: AppTheme.textSecondary)),
+                  child: Text(
+                    'No match data',
+                    style: TextStyle(color: AppTheme.textSecondary),
+                  ),
                 );
               }
 
@@ -59,12 +93,14 @@ class MatchResultScreen extends StatelessWidget {
                         Text(
                           'Provider Found',
                           style: GoogleFonts.outfit(
-                            fontSize: 22,
+                            fontSize: 18,
                             fontWeight: FontWeight.w800,
                             color: AppTheme.textPrimary,
                           ),
                         ),
-                        const SizedBox(width: 48), // visually balance back arrow
+                        const SizedBox(
+                          width: 48,
+                        ), // visually balance back arrow
                       ],
                     ),
                   ),
@@ -76,21 +112,19 @@ class MatchResultScreen extends StatelessWidget {
                           const SizedBox(height: 20),
                           // Success icon
                           Container(
-                            width: 100,
-                            height: 100,
+                            width: 82,
+                            height: 82,
                             decoration: BoxDecoration(
                               gradient: const LinearGradient(
-                                colors: [
-                                  Color(0xFF00E676),
-                                  Color(0xFF00C853),
-                                ],
+                                colors: [Color(0xFF00E676), Color(0xFF00C853)],
                               ),
-                              borderRadius: BorderRadius.circular(30),
+                              borderRadius: BorderRadius.circular(20),
                               boxShadow: [
                                 BoxShadow(
-                                  color: AppTheme.success
-                                      .withValues(alpha: 0.4),
-                                  blurRadius: 32,
+                                  color: AppTheme.success.withValues(
+                                    alpha: 0.4,
+                                  ),
+                                  blurRadius: 18,
                                   offset: const Offset(0, 8),
                                 ),
                               ],
@@ -98,15 +132,15 @@ class MatchResultScreen extends StatelessWidget {
                             child: const Icon(
                               Icons.check_rounded,
                               color: Colors.white,
-                              size: 50,
+                              size: 38,
                             ),
                           ),
                           const SizedBox(height: 24),
                           Text(
                             'Perfect Match!',
                             style: GoogleFonts.outfit(
-                              fontSize: 28,
-                              fontWeight: FontWeight.w700,
+                              fontSize: 24,
+                              fontWeight: FontWeight.w800,
                               color: AppTheme.textPrimary,
                             ),
                           ),
@@ -122,23 +156,21 @@ class MatchResultScreen extends StatelessWidget {
 
                           // Provider card
                           GlassCard(
-                            padding: const EdgeInsets.all(24),
+                            padding: const EdgeInsets.all(16),
                             child: Column(
                               children: [
                                 Container(
-                                  width: 70,
-                                  height: 70,
+                                  width: 58,
+                                  height: 58,
                                   decoration: BoxDecoration(
                                     gradient: AppTheme.primaryGradient,
-                                    borderRadius:
-                                        BorderRadius.circular(20),
+                                    borderRadius: BorderRadius.circular(14),
                                   ),
                                   child: Center(
                                     child: Text(
-                                      match.provider.name[0]
-                                          .toUpperCase(),
+                                      match.provider.name[0].toUpperCase(),
                                       style: GoogleFonts.outfit(
-                                        fontSize: 28,
+                                        fontSize: 24,
                                         fontWeight: FontWeight.w700,
                                         color: Colors.white,
                                       ),
@@ -149,23 +181,23 @@ class MatchResultScreen extends StatelessWidget {
                                 Text(
                                   match.provider.name,
                                   style: GoogleFonts.outfit(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.w600,
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w800,
                                     color: AppTheme.textPrimary,
                                   ),
                                 ),
                                 const SizedBox(height: 8),
                                 Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.center,
+                                  mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    const Icon(Icons.star_rounded,
-                                        color: Color(0xFFFFD700),
-                                        size: 20),
+                                    const Icon(
+                                      Icons.star_rounded,
+                                      color: Color(0xFFFFD700),
+                                      size: 20,
+                                    ),
                                     const SizedBox(width: 4),
                                     Text(
-                                      match.provider.rating
-                                          .toStringAsFixed(1),
+                                      match.provider.rating.toStringAsFixed(1),
                                       style: GoogleFonts.inter(
                                         fontSize: 14,
                                         fontWeight: FontWeight.w600,
@@ -173,9 +205,11 @@ class MatchResultScreen extends StatelessWidget {
                                       ),
                                     ),
                                     const SizedBox(width: 12),
-                                    Icon(Icons.work_rounded,
-                                        color: AppTheme.textMuted,
-                                        size: 18),
+                                    Icon(
+                                      Icons.work_rounded,
+                                      color: AppTheme.textMuted,
+                                      size: 18,
+                                    ),
                                     const SizedBox(width: 4),
                                     Text(
                                       '${match.provider.totalJobs} jobs',
@@ -187,9 +221,10 @@ class MatchResultScreen extends StatelessWidget {
                                     if (match.provider.isVerified) ...[
                                       const SizedBox(width: 12),
                                       const Icon(
-                                          Icons.verified_rounded,
-                                          color: AppTheme.accent,
-                                          size: 20),
+                                        Icons.verified_rounded,
+                                        color: AppTheme.accent,
+                                        size: 20,
+                                      ),
                                     ],
                                   ],
                                 ),
@@ -200,51 +235,55 @@ class MatchResultScreen extends StatelessWidget {
 
                           // Booking summary
                           GlassCard(
-                            padding: const EdgeInsets.all(24),
+                            padding: const EdgeInsets.all(16),
                             child: Column(
-                              crossAxisAlignment:
-                                  CrossAxisAlignment.start,
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
                                   'Booking Summary',
                                   style: GoogleFonts.outfit(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w600,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w800,
                                     color: AppTheme.textPrimary,
                                   ),
                                 ),
                                 const SizedBox(height: 18),
-                                _summaryRow('Service',
-                                    match.service.name),
+                                _summaryRow('Service', match.service.name),
+                                _summaryRow('Date', match.date.split('T')[0]),
+                                _summaryRow('Time Slot', match.slot),
                                 _summaryRow(
-                                    'Date',
-                                    match.date
-                                        .split('T')[0]),
-                                _summaryRow(
-                                    'Time Slot', match.slot),
-                                _summaryRow('Duration',
-                                    '${match.estimatedDuration} min'),
+                                  'Duration',
+                                  '${match.estimatedDuration} min',
+                                ),
                                 const Divider(
-                                    color: AppTheme.textMuted,
-                                    height: 32),
+                                  color: AppTheme.textMuted,
+                                  height: 32,
+                                ),
+                                _summaryRow(
+                                  'Subtotal',
+                                  '₹${match.price.toInt()}',
+                                ),
+                                const Divider(
+                                  color: AppTheme.textMuted,
+                                  height: 32,
+                                ),
                                 Row(
                                   mainAxisAlignment:
-                                      MainAxisAlignment
-                                          .spaceBetween,
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
                                     Text(
                                       'Total Price',
                                       style: GoogleFonts.outfit(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.w600,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w800,
                                         color: AppTheme.textPrimary,
                                       ),
                                     ),
                                     Text(
                                       '₹${match.price.toInt()}',
                                       style: GoogleFonts.outfit(
-                                        fontSize: 24,
-                                        fontWeight: FontWeight.w700,
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.w800,
                                         color: AppTheme.accent,
                                       ),
                                     ),
@@ -259,8 +298,7 @@ class MatchResultScreen extends StatelessWidget {
                             text: 'Confirm Booking',
                             icon: Icons.check_circle_rounded,
                             isLoading: bookingProvider.isLoading,
-                            onPressed: () =>
-                                _confirmBooking(context),
+                            onPressed: () => _confirmBooking(context),
                           ),
                           const SizedBox(height: 16),
                           TextButton(
@@ -298,10 +336,7 @@ class MatchResultScreen extends StatelessWidget {
         children: [
           Text(
             label,
-            style: GoogleFonts.inter(
-              fontSize: 14,
-              color: AppTheme.textMuted,
-            ),
+            style: GoogleFonts.inter(fontSize: 14, color: AppTheme.textMuted),
           ),
           Text(
             value,
@@ -314,34 +349,5 @@ class MatchResultScreen extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  Future<void> _confirmBooking(BuildContext context) async {
-    final bookingProvider = context.read<BookingProvider>();
-    final success = await bookingProvider.createBooking();
-
-    if (!context.mounted) return;
-
-    if (success) {
-      Navigator.pushNamedAndRemoveUntil(
-        context,
-        '/bookings',
-        (route) => route.settings.name == '/home',
-      );
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('🎉 Booking confirmed successfully!'),
-          backgroundColor: AppTheme.success,
-        ),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content:
-              Text(bookingProvider.error ?? 'Failed to create booking'),
-          backgroundColor: AppTheme.error,
-        ),
-      );
-    }
   }
 }

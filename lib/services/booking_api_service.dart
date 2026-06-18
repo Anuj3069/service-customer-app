@@ -74,6 +74,20 @@ class BookingApiService {
     return Booking.fromJson(data);
   }
 
+  /// Cancel a requested/pending booking
+  Future<Booking> cancelBooking(String id, {String? cancellationReason}) async {
+    final response = await ApiClient.put(ApiConfig.cancelBooking(id), {
+      if (cancellationReason != null && cancellationReason.trim().isNotEmpty)
+        'cancellationReason': cancellationReason.trim(),
+    });
+    final data = response['data'];
+
+    if (data['booking'] != null) {
+      return Booking.fromJson(data['booking']);
+    }
+    return Booking.fromJson(data);
+  }
+
   /// Get the completion OTP for an accepted booking (customer-only)
   Future<String> getCompletionOtp(String bookingId) async {
     final response = await ApiClient.get(ApiConfig.bookingOtp(bookingId));

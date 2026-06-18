@@ -63,7 +63,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
                     Text(
                       'Write Review',
                       style: GoogleFonts.outfit(
-                        fontSize: 22,
+                        fontSize: 18,
                         fontWeight: FontWeight.w800,
                         color: AppTheme.textPrimary,
                       ),
@@ -81,8 +81,8 @@ class _ReviewScreenState extends State<ReviewScreen> {
                       Text(
                         'How was the service?',
                         style: GoogleFonts.outfit(
-                          fontSize: 24,
-                          fontWeight: FontWeight.w600,
+                          fontSize: 22,
+                          fontWeight: FontWeight.w800,
                           color: AppTheme.textPrimary,
                         ),
                       ),
@@ -99,25 +99,25 @@ class _ReviewScreenState extends State<ReviewScreen> {
                       // Stars
                       GlassCard(
                         padding: const EdgeInsets.symmetric(
-                            vertical: 28, horizontal: 20),
+                          vertical: 22,
+                          horizontal: 16,
+                        ),
                         child: Column(
                           children: [
                             Row(
-                              mainAxisAlignment:
-                                  MainAxisAlignment.center,
+                              mainAxisAlignment: MainAxisAlignment.center,
                               children: List.generate(5, (index) {
                                 return GestureDetector(
                                   onTap: () =>
                                       setState(() => _rating = index + 1),
                                   child: AnimatedContainer(
-                                    duration: const Duration(
-                                        milliseconds: 200),
+                                    duration: const Duration(milliseconds: 200),
                                     padding: const EdgeInsets.all(6),
                                     child: Icon(
                                       index < _rating
                                           ? Icons.star_rounded
                                           : Icons.star_outline_rounded,
-                                      size: 44,
+                                      size: 36,
                                       color: index < _rating
                                           ? const Color(0xFFFFD700)
                                           : AppTheme.textMuted,
@@ -142,7 +142,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
 
                       // Comment
                       GlassCard(
-                        padding: const EdgeInsets.all(20),
+                        padding: const EdgeInsets.all(16),
                         child: TextField(
                           controller: _commentController,
                           maxLines: 5,
@@ -174,8 +174,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
                             icon: Icons.send_rounded,
                             isLoading: bookingProvider.isLoading,
                             onPressed: _rating > 0
-                                ? () =>
-                                    _submitReview(context, booking)
+                                ? () => _submitReview(context, booking)
                                 : null,
                           );
                         },
@@ -231,8 +230,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content:
-              Text(bookingProvider.error ?? 'Failed to submit review'),
+          content: Text(bookingProvider.error ?? 'Failed to submit review'),
           backgroundColor: AppTheme.error,
         ),
       );

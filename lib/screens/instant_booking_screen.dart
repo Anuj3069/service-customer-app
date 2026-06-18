@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../config/theme.dart';
 import '../providers/booking_provider.dart';
+import '../utils/cancellation_reason_helper.dart';
 import '../widgets/gradient_button.dart';
 
 /// Full-screen waiting UI shown while an instant booking searches for a provider.
@@ -23,6 +24,7 @@ class _InstantBookingScreenState extends State<InstantBookingScreen>
 
   Timer? _countdownTimer;
   int _secondsRemaining = 300; // Default 5 minutes, synced with Redis TTL
+  bool _canceling = false;
 
   @override
   void initState() {
@@ -104,6 +106,41 @@ class _InstantBookingScreenState extends State<InstantBookingScreen>
     return '${min.toString().padLeft(2, '0')}:${sec.toString().padLeft(2, '0')}';
   }
 
+  Future<void> _cancelInstantBooking(BookingProvider bp) async {
+    final booking = bp.instantBooking;
+    if (booking == null || _canceling) return;
+
+    final reason = await showCancellationReasonPicker(context);
+    if (reason == null || !mounted) return;
+
+    setState(() => _canceling = true);
+    final success = await bp.cancelBooking(
+      booking.id,
+      cancellationReason: reason,
+    );
+
+    if (!mounted) return;
+    setState(() => _canceling = false);
+
+    if (success) {
+      _countdownTimer?.cancel();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Booking request cancelled.'),
+          backgroundColor: AppTheme.success,
+        ),
+      );
+      Navigator.pop(context);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(bp.error ?? 'Failed to cancel booking request'),
+          backgroundColor: AppTheme.error,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<BookingProvider>(
@@ -116,9 +153,7 @@ class _InstantBookingScreenState extends State<InstantBookingScreen>
             body: Container(
               width: double.infinity,
               decoration: const BoxDecoration(gradient: AppTheme.bgGradient),
-              child: SafeArea(
-                child: _buildContent(status, bp),
-              ),
+              child: SafeArea(child: _buildContent(status, bp)),
             ),
           ),
         );
@@ -136,8 +171,11 @@ class _InstantBookingScreenState extends State<InstantBookingScreen>
         // If somehow still on this screen when tracking, redirect
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted && bp.trackingBookingId != null) {
-            Navigator.pushNamed(context, '/live-tracking',
-                arguments: bp.trackingBookingId);
+            Navigator.pushNamed(
+              context,
+              '/live-tracking',
+              arguments: bp.trackingBookingId,
+            );
           }
         });
         return _buildConfirmedView(bp);
@@ -293,7 +331,7 @@ class _InstantBookingScreenState extends State<InstantBookingScreen>
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             decoration: BoxDecoration(
               color: AppTheme.warning.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(30),
+              borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: AppTheme.warning.withValues(alpha: 0.3),
               ),
@@ -301,8 +339,7 @@ class _InstantBookingScreenState extends State<InstantBookingScreen>
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.timer_rounded,
-                    color: AppTheme.warning, size: 20),
+                Icon(Icons.timer_rounded, color: AppTheme.warning, size: 20),
                 const SizedBox(width: 8),
                 Text(
                   'Expires in $_formattedTime',
@@ -314,6 +351,20 @@ class _InstantBookingScreenState extends State<InstantBookingScreen>
                 ),
               ],
             ),
+          ),
+          const SizedBox(height: 24),
+          GradientButton(
+            text: 'Cancel Request',
+            icon: Icons.cancel_rounded,
+            isLoading: _canceling,
+            gradient: const LinearGradient(
+              colors: [AppTheme.error, Color(0xFFC62828)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            onPressed: booking == null || _canceling
+                ? null
+                : () => _cancelInstantBooking(bp),
           ),
         ],
       ),
@@ -337,10 +388,10 @@ class _InstantBookingScreenState extends State<InstantBookingScreen>
               return Transform.scale(
                 scale: value,
                 child: Container(
-                  width: 120,
-                  height: 120,
+                  width: 86,
+                  height: 86,
                   decoration: BoxDecoration(
-                    shape: BoxShape.circle,
+                    borderRadius: BorderRadius.circular(22),
                     gradient: LinearGradient(
                       colors: [
                         AppTheme.success,
@@ -350,15 +401,15 @@ class _InstantBookingScreenState extends State<InstantBookingScreen>
                     boxShadow: [
                       BoxShadow(
                         color: AppTheme.success.withValues(alpha: 0.4),
-                        blurRadius: 30,
-                        spreadRadius: 5,
+                        blurRadius: 18,
+                        spreadRadius: 2,
                       ),
                     ],
                   ),
                   child: const Icon(
                     Icons.check_rounded,
                     color: Colors.white,
-                    size: 56,
+                    size: 40,
                   ),
                 ),
               );
@@ -492,20 +543,20 @@ class _InstantBookingScreenState extends State<InstantBookingScreen>
               return Transform.scale(
                 scale: value,
                 child: Container(
-                  width: 120,
-                  height: 120,
+                  width: 86,
+                  height: 86,
                   decoration: BoxDecoration(
-                    shape: BoxShape.circle,
+                    borderRadius: BorderRadius.circular(22),
                     color: AppTheme.error.withValues(alpha: 0.1),
                     border: Border.all(
                       color: AppTheme.error.withValues(alpha: 0.3),
-                      width: 3,
+                      width: 2,
                     ),
                   ),
                   child: Icon(
                     Icons.timer_off_rounded,
                     color: AppTheme.error,
-                    size: 52,
+                    size: 40,
                   ),
                 ),
               );

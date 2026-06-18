@@ -5,6 +5,7 @@ import '../config/theme.dart';
 import '../providers/booking_provider.dart';
 import '../models/booking.dart';
 import '../services/booking_api_service.dart';
+import '../utils/cancellation_reason_helper.dart';
 import '../widgets/glass_card.dart';
 import '../widgets/status_badge.dart';
 import '../widgets/gradient_button.dart';
@@ -19,6 +20,7 @@ class BookingDetailScreen extends StatefulWidget {
 class _BookingDetailScreenState extends State<BookingDetailScreen> {
   Booking? _booking;
   bool _refreshing = false;
+  bool _canceling = false;
 
   // OTP state
   String? _otp;
@@ -29,8 +31,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     // Only seed from route args the very first time
-    _booking ??=
-        ModalRoute.of(context)!.settings.arguments as Booking;
+    _booking ??= ModalRoute.of(context)!.settings.arguments as Booking;
   }
 
   @override
@@ -57,11 +58,9 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
 
   void _openTracking(Booking booking) {
     context.read<BookingProvider>().startTrackingBooking(booking);
-    Navigator.pushNamed(
-      context,
-      '/live-tracking',
-      arguments: booking.id,
-    ).then((_) {
+    Navigator.pushNamed(context, '/live-tracking', arguments: booking.id).then((
+      _,
+    ) {
       // Re-fetch when returning from the tracking screen
       _refreshBooking();
     });
@@ -85,7 +84,10 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Could not fetch OTP: $e'), backgroundColor: AppTheme.error),
+          SnackBar(
+            content: Text('Could not fetch OTP: $e'),
+            backgroundColor: AppTheme.error,
+          ),
         );
       }
     } finally {
@@ -93,13 +95,48 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
     }
   }
 
+  Future<void> _cancelBooking(Booking booking) async {
+    final reason = await showCancellationReasonPicker(context);
+
+    if (reason == null || !mounted) return;
+
+    setState(() => _canceling = true);
+    final bp = context.read<BookingProvider>();
+    final success = await bp.cancelBooking(
+      booking.id,
+      cancellationReason: reason,
+    );
+
+    if (!mounted) return;
+    setState(() => _canceling = false);
+
+    if (success) {
+      final fresh = bp.selectedBooking;
+      if (fresh != null) {
+        setState(() => _booking = fresh);
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Booking cancelled successfully.'),
+          backgroundColor: AppTheme.success,
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(bp.error ?? 'Failed to cancel booking'),
+          backgroundColor: AppTheme.error,
+        ),
+      );
+      _refreshBooking();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final booking = _booking;
     if (booking == null) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     return Scaffold(
@@ -200,13 +237,17 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                                 color: Colors.white,
                                 boxShadow: [
                                   BoxShadow(
-                                    color: AppTheme.statusColor(booking.status).withValues(alpha: 0.25),
+                                    color: AppTheme.statusColor(
+                                      booking.status,
+                                    ).withValues(alpha: 0.25),
                                     blurRadius: 20,
                                     offset: const Offset(0, 8),
                                   ),
                                 ],
                                 border: Border.all(
-                                  color: AppTheme.statusColor(booking.status).withValues(alpha: 0.15),
+                                  color: AppTheme.statusColor(
+                                    booking.status,
+                                  ).withValues(alpha: 0.15),
                                   width: 2,
                                 ),
                               ),
@@ -216,7 +257,9 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                                   height: 74,
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
-                                    color: AppTheme.statusColor(booking.status).withValues(alpha: 0.1),
+                                    color: AppTheme.statusColor(
+                                      booking.status,
+                                    ).withValues(alpha: 0.1),
                                   ),
                                   child: Icon(
                                     _statusIcon(booking.status),
@@ -250,14 +293,16 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                             const SizedBox(height: 16),
                             _detailRow('Service', booking.serviceName),
                             _detailRow(
-                                'Date', booking.date?.split('T')[0] ?? 'Instant'),
+                              'Date',
+                              booking.date?.split('T')[0] ?? 'Instant',
+                            ),
                             _detailRow('Time Slot', booking.slot ?? 'Now'),
-                            _detailRow(
-                                'Price', '₹${booking.price.toInt()}'),
+                            _detailRow('Price', '₹${booking.price.toInt()}'),
                             Padding(
                               padding: const EdgeInsets.symmetric(vertical: 8),
                               child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
                                     'Payment Status',
@@ -267,13 +312,22 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                                     ),
                                   ),
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                      vertical: 4,
+                                    ),
                                     decoration: BoxDecoration(
                                       color: booking.paymentStatus == 'paid'
-                                          ? AppTheme.success.withValues(alpha: 0.1)
+                                          ? AppTheme.success.withValues(
+                                              alpha: 0.1,
+                                            )
                                           : (booking.paymentStatus == 'pending'
-                                              ? AppTheme.warning.withValues(alpha: 0.1)
-                                              : AppTheme.error.withValues(alpha: 0.1)),
+                                                ? AppTheme.warning.withValues(
+                                                    alpha: 0.1,
+                                                  )
+                                                : AppTheme.error.withValues(
+                                                    alpha: 0.1,
+                                                  )),
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: Text(
@@ -283,9 +337,10 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                                         fontWeight: FontWeight.bold,
                                         color: booking.paymentStatus == 'paid'
                                             ? AppTheme.success
-                                            : (booking.paymentStatus == 'pending'
-                                                ? AppTheme.warning
-                                                : AppTheme.error),
+                                            : (booking.paymentStatus ==
+                                                      'pending'
+                                                  ? AppTheme.warning
+                                                  : AppTheme.error),
                                       ),
                                     ),
                                   ),
@@ -353,12 +408,31 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                       const SizedBox(height: 24),
 
                       // ── Track Provider button for accepted bookings ──
+                      if (booking.canCancel) ...[
+                        GradientButton(
+                          text: 'Cancel Booking',
+                          icon: Icons.cancel_rounded,
+                          isLoading: _canceling,
+                          gradient: const LinearGradient(
+                            colors: [AppTheme.error, Color(0xFFC62828)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          onPressed: _canceling
+                              ? null
+                              : () => _cancelBooking(booking),
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+
                       if (booking.status == 'accepted') ...[
                         // Worker location status chip
                         Container(
                           width: double.infinity,
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 12),
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
                           decoration: BoxDecoration(
                             color: booking.workerLocationCoordinates != null
                                 ? AppTheme.success.withValues(alpha: 0.1)
@@ -377,7 +451,8 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                                 height: 8,
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  color: booking.workerLocationCoordinates != null
+                                  color:
+                                      booking.workerLocationCoordinates != null
                                       ? AppTheme.success
                                       : AppTheme.textMuted,
                                 ),
@@ -390,7 +465,8 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                                 style: GoogleFonts.inter(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w500,
-                                  color: booking.workerLocationCoordinates != null
+                                  color:
+                                      booking.workerLocationCoordinates != null
                                       ? AppTheme.success
                                       : AppTheme.textMuted,
                                 ),
@@ -433,13 +509,17 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                                       gradient: AppTheme.primaryGradient,
                                       borderRadius: BorderRadius.circular(10),
                                     ),
-                                    child: const Icon(Icons.lock_rounded,
-                                        color: Colors.white, size: 18),
+                                    child: const Icon(
+                                      Icons.lock_rounded,
+                                      color: Colors.white,
+                                      size: 18,
+                                    ),
                                   ),
                                   const SizedBox(width: 12),
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text(
                                           'Job Completion OTP',
@@ -464,7 +544,8 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                               ),
                               const SizedBox(height: 16),
                               Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
                                   _otpLoading
                                       ? const SizedBox(
@@ -480,58 +561,74 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                                             ),
                                           ),
                                         )
-                                      : _otpVisible && _otp != null && _otp!.isNotEmpty
-                                          ? Row(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: _otp!.split('').map((digit) {
-                                                return Container(
-                                                  margin: const EdgeInsets.only(right: 8),
-                                                  width: 42,
-                                                  height: 48,
-                                                  decoration: BoxDecoration(
-                                                    gradient: AppTheme.primaryGradient,
-                                                    borderRadius: BorderRadius.circular(12),
-                                                    boxShadow: [
-                                                      BoxShadow(
-                                                        color: AppTheme.primary
-                                                            .withValues(alpha: 0.3),
-                                                        blurRadius: 8,
-                                                        offset: const Offset(0, 4),
-                                                      ),
-                                                    ],
+                                      : _otpVisible &&
+                                            _otp != null &&
+                                            _otp!.isNotEmpty
+                                      ? Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: _otp!.split('').map((
+                                            digit,
+                                          ) {
+                                            return Container(
+                                              margin: const EdgeInsets.only(
+                                                right: 8,
+                                              ),
+                                              width: 42,
+                                              height: 48,
+                                              decoration: BoxDecoration(
+                                                gradient:
+                                                    AppTheme.primaryGradient,
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                                boxShadow: [
+                                                  BoxShadow(
+                                                    color: AppTheme.primary
+                                                        .withValues(alpha: 0.3),
+                                                    blurRadius: 8,
+                                                    offset: const Offset(0, 4),
                                                   ),
-                                                  child: Center(
-                                                    child: Text(
-                                                      digit,
-                                                      style: GoogleFonts.jetBrainsMono(
+                                                ],
+                                              ),
+                                              child: Center(
+                                                child: Text(
+                                                  digit,
+                                                  style:
+                                                      GoogleFonts.jetBrainsMono(
                                                         fontSize: 24,
-                                                        fontWeight: FontWeight.w900,
+                                                        fontWeight:
+                                                            FontWeight.w900,
                                                         color: Colors.white,
                                                       ),
-                                                    ),
-                                                  ),
-                                                );
-                                              }).toList(),
-                                            )
-                                          : Text(
-                                              '● ● ● ●',
-                                              style: GoogleFonts.inter(
-                                                fontSize: 22,
-                                                fontWeight: FontWeight.w900,
-                                                color: AppTheme.textMuted,
-                                                letterSpacing: 6,
+                                                ),
                                               ),
-                                            ),
+                                            );
+                                          }).toList(),
+                                        )
+                                      : Text(
+                                          '● ● ● ●',
+                                          style: GoogleFonts.inter(
+                                            fontSize: 22,
+                                            fontWeight: FontWeight.w900,
+                                            color: AppTheme.textMuted,
+                                            letterSpacing: 6,
+                                          ),
+                                        ),
                                   GestureDetector(
                                     onTap: _revealOtp,
                                     child: Container(
                                       padding: const EdgeInsets.symmetric(
-                                          horizontal: 18, vertical: 10),
+                                        horizontal: 18,
+                                        vertical: 10,
+                                      ),
                                       decoration: BoxDecoration(
-                                        color: AppTheme.primary.withValues(alpha: 0.08),
+                                        color: AppTheme.primary.withValues(
+                                          alpha: 0.08,
+                                        ),
                                         borderRadius: BorderRadius.circular(14),
                                         border: Border.all(
-                                          color: AppTheme.primary.withValues(alpha: 0.2),
+                                          color: AppTheme.primary.withValues(
+                                            alpha: 0.2,
+                                          ),
                                         ),
                                       ),
                                       child: Text(
@@ -557,7 +654,10 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                         if (booking.paymentStatus == 'paid') ...[
                           Container(
                             width: double.infinity,
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
                             margin: const EdgeInsets.only(bottom: 16),
                             decoration: BoxDecoration(
                               color: AppTheme.success.withValues(alpha: 0.1),
@@ -568,7 +668,11 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                             ),
                             child: Row(
                               children: [
-                                const Icon(Icons.check_circle_rounded, color: AppTheme.success, size: 20),
+                                const Icon(
+                                  Icons.check_circle_rounded,
+                                  color: AppTheme.success,
+                                  size: 20,
+                                ),
                                 const SizedBox(width: 10),
                                 Text(
                                   'Payment completed successfully!',
@@ -595,7 +699,10 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                         ] else ...[
                           Container(
                             width: double.infinity,
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
                             margin: const EdgeInsets.only(bottom: 16),
                             decoration: BoxDecoration(
                               color: AppTheme.warning.withValues(alpha: 0.1),
@@ -606,7 +713,11 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                             ),
                             child: Row(
                               children: [
-                                const Icon(Icons.payment_rounded, color: AppTheme.warning, size: 20),
+                                const Icon(
+                                  Icons.payment_rounded,
+                                  color: AppTheme.warning,
+                                  size: 20,
+                                ),
                                 const SizedBox(width: 10),
                                 Expanded(
                                   child: Text(
@@ -653,6 +764,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
   IconData _statusIcon(String status) {
     switch (status.toLowerCase()) {
       case 'pending':
+      case 'requested':
         return Icons.hourglass_top_rounded;
       case 'accepted':
         return Icons.check_circle_rounded;
@@ -675,10 +787,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
         children: [
           Text(
             label,
-            style: GoogleFonts.inter(
-              fontSize: 14,
-              color: AppTheme.textMuted,
-            ),
+            style: GoogleFonts.inter(fontSize: 14, color: AppTheme.textMuted),
           ),
           Text(
             value,
@@ -714,7 +823,9 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                 shape: BoxShape.circle,
                 color: isCompleted ? color : Colors.white,
                 border: Border.all(
-                  color: isCompleted ? color : AppTheme.textMuted.withValues(alpha: 0.4),
+                  color: isCompleted
+                      ? color
+                      : AppTheme.textMuted.withValues(alpha: 0.4),
                   width: 2,
                 ),
                 boxShadow: isCompleted
@@ -743,7 +854,9 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                 height: 32,
                 child: CustomPaint(
                   painter: DottedLinePainter(
-                    color: isCompleted ? color.withValues(alpha: 0.6) : AppTheme.textMuted.withValues(alpha: 0.3),
+                    color: isCompleted
+                        ? color.withValues(alpha: 0.6)
+                        : AppTheme.textMuted.withValues(alpha: 0.3),
                   ),
                 ),
               ),
@@ -764,10 +877,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
             const SizedBox(height: 2),
             Text(
               dateStr.split('T')[0],
-              style: GoogleFonts.inter(
-                fontSize: 12,
-                color: AppTheme.textMuted,
-              ),
+              style: GoogleFonts.inter(fontSize: 12, color: AppTheme.textMuted),
             ),
             if (!isLast) const SizedBox(height: 16),
           ],
@@ -788,7 +898,7 @@ class DottedLinePainter extends CustomPainter {
       ..color = color
       ..strokeWidth = 2
       ..style = PaintingStyle.stroke;
-    
+
     double startY = 0;
     while (startY < size.height) {
       canvas.drawCircle(Offset(size.width / 2, startY), 1.2, paint);

@@ -33,9 +33,13 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
   Widget _buildVectorIllustration(String name) {
     final cleanName = name.toLowerCase();
     CustomPainter painter;
-    if (cleanName.contains('tap') || cleanName.contains('faucet') || cleanName.contains('installation')) {
+    if (cleanName.contains('tap') ||
+        cleanName.contains('faucet') ||
+        cleanName.contains('installation')) {
       painter = FaucetPainter();
-    } else if (cleanName.contains('pipe') || cleanName.contains('leak') || cleanName.contains('repair')) {
+    } else if (cleanName.contains('pipe') ||
+        cleanName.contains('leak') ||
+        cleanName.contains('repair')) {
       painter = PipesPainter();
     } else {
       painter = WrenchPainter();
@@ -87,7 +91,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
                     Text(
                       'Service Details',
                       style: GoogleFonts.outfit(
-                        fontSize: 22,
+                        fontSize: 18,
                         fontWeight: FontWeight.w800,
                         color: AppTheme.textPrimary,
                       ),
@@ -106,10 +110,10 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
                       // Main Illustration Card (Row based for right-side custom illustration)
                       Container(
                         width: double.infinity,
-                        padding: const EdgeInsets.all(22),
+                        padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
                           color: Colors.white,
-                          borderRadius: BorderRadius.circular(24),
+                          borderRadius: BorderRadius.circular(12),
                           border: Border.all(
                             color: AppTheme.primary.withValues(alpha: 0.05),
                           ),
@@ -131,7 +135,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
                                   Text(
                                     service.name,
                                     style: GoogleFonts.outfit(
-                                      fontSize: 24,
+                                      fontSize: 20,
                                       fontWeight: FontWeight.w800,
                                       color: AppTheme.textPrimary,
                                     ),
@@ -178,9 +182,18 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
                         const SizedBox(height: 24),
                         _buildTrustRow(
                           badges: [
-                            MapEntry('Verified Pros', Icons.verified_user_rounded),
-                            MapEntry('Upfront Pricing', Icons.monetization_on_rounded),
-                            MapEntry('24/7 Support', Icons.support_agent_rounded),
+                            MapEntry(
+                              'Verified Pros',
+                              Icons.verified_user_rounded,
+                            ),
+                            MapEntry(
+                              'Upfront Pricing',
+                              Icons.monetization_on_rounded,
+                            ),
+                            MapEntry(
+                              '24/7 Support',
+                              Icons.support_agent_rounded,
+                            ),
                           ],
                         ),
                         const SizedBox(height: 28),
@@ -190,7 +203,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
                         Text(
                           'Select Date',
                           style: GoogleFonts.outfit(
-                            fontSize: 18,
+                            fontSize: 16,
                             fontWeight: FontWeight.w800,
                             color: AppTheme.textPrimary,
                           ),
@@ -220,37 +233,56 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
                                         clipBehavior: Clip.none,
                                         children: [
                                           AnimatedContainer(
-                                            duration: const Duration(milliseconds: 200),
+                                            duration: const Duration(
+                                              milliseconds: 200,
+                                            ),
                                             width: 65,
-                                            margin: const EdgeInsets.only(right: 12, top: 4, bottom: 4),
+                                            margin: const EdgeInsets.only(
+                                              right: 12,
+                                              top: 4,
+                                              bottom: 4,
+                                            ),
                                             decoration: BoxDecoration(
                                               gradient: isSelected
                                                   ? AppTheme.primaryGradient
                                                   : null,
-                                              color: isSelected ? null : Colors.white,
-                                              borderRadius: BorderRadius.circular(16),
+                                              color: isSelected
+                                                  ? null
+                                                  : Colors.white,
+                                              borderRadius:
+                                                  BorderRadius.circular(16),
                                               border: isSelected
                                                   ? null
                                                   : Border.all(
-                                                      color: AppTheme.primary.withValues(alpha: 0.05),
+                                                      color: AppTheme.primary
+                                                          .withValues(
+                                                            alpha: 0.05,
+                                                          ),
                                                     ),
                                               boxShadow: [
                                                 BoxShadow(
-                                                  color: Colors.black.withValues(alpha: 0.02),
+                                                  color: Colors.black
+                                                      .withValues(alpha: 0.02),
                                                   blurRadius: 6,
                                                   offset: const Offset(0, 3),
                                                 ),
                                               ],
                                             ),
                                             child: Column(
-                                              mainAxisAlignment: MainAxisAlignment.center,
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
                                               children: [
                                                 Text(
-                                                  DateFormat('EEE').format(date),
+                                                  DateFormat(
+                                                    'EEE',
+                                                  ).format(date),
                                                   style: GoogleFonts.inter(
                                                     fontSize: 12,
                                                     color: isSelected
-                                                        ? Colors.white.withValues(alpha: 0.8)
+                                                        ? Colors.white
+                                                              .withValues(
+                                                                alpha: 0.8,
+                                                              )
                                                         : AppTheme.textMuted,
                                                   ),
                                                 ),
@@ -266,11 +298,16 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
                                                   ),
                                                 ),
                                                 Text(
-                                                  DateFormat('MMM').format(date),
+                                                  DateFormat(
+                                                    'MMM',
+                                                  ).format(date),
                                                   style: GoogleFonts.inter(
                                                     fontSize: 11,
                                                     color: isSelected
-                                                        ? Colors.white.withValues(alpha: 0.8)
+                                                        ? Colors.white
+                                                              .withValues(
+                                                                alpha: 0.8,
+                                                              )
                                                         : AppTheme.textMuted,
                                                   ),
                                                 ),
@@ -282,7 +319,9 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
                                               top: 0,
                                               right: 8,
                                               child: Container(
-                                                padding: const EdgeInsets.all(2),
+                                                padding: const EdgeInsets.all(
+                                                  2,
+                                                ),
                                                 decoration: const BoxDecoration(
                                                   color: Colors.white,
                                                   shape: BoxShape.circle,
@@ -309,7 +348,9 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
                                 color: Colors.white,
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
-                                  color: AppTheme.primary.withValues(alpha: 0.05),
+                                  color: AppTheme.primary.withValues(
+                                    alpha: 0.05,
+                                  ),
                                 ),
                               ),
                               child: const Icon(
@@ -333,12 +374,13 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
                         GridView.builder(
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
-                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            childAspectRatio: 2.8,
-                            mainAxisSpacing: 10,
-                            crossAxisSpacing: 10,
-                          ),
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 2,
+                                childAspectRatio: 2.8,
+                                mainAxisSpacing: 10,
+                                crossAxisSpacing: 10,
+                              ),
                           itemCount: _timeSlots.length,
                           itemBuilder: (context, index) {
                             final slot = _timeSlots[index];
@@ -348,31 +390,46 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
                               child: AnimatedContainer(
                                 duration: const Duration(milliseconds: 200),
                                 decoration: BoxDecoration(
-                                  color: isSelected ? const Color(0xFFEFF7FF) : Colors.white,
+                                  color: isSelected
+                                      ? const Color(0xFFEFF7FF)
+                                      : Colors.white,
                                   borderRadius: BorderRadius.circular(16),
                                   border: Border.all(
-                                    color: isSelected ? AppTheme.primary : AppTheme.primary.withValues(alpha: 0.05),
+                                    color: isSelected
+                                        ? AppTheme.primary
+                                        : AppTheme.primary.withValues(
+                                            alpha: 0.05,
+                                          ),
                                     width: isSelected ? 2 : 1,
                                   ),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.black.withValues(alpha: 0.02),
+                                      color: Colors.black.withValues(
+                                        alpha: 0.02,
+                                      ),
                                       blurRadius: 6,
                                       offset: const Offset(0, 3),
                                     ),
                                   ],
                                 ),
                                 child: Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 14,
+                                  ),
                                   child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
                                     children: [
                                       Text(
                                         slot,
                                         style: GoogleFonts.inter(
                                           fontSize: 13,
-                                          fontWeight: isSelected ? FontWeight.w800 : FontWeight.w500,
-                                          color: isSelected ? AppTheme.primary : AppTheme.textSecondary,
+                                          fontWeight: isSelected
+                                              ? FontWeight.w800
+                                              : FontWeight.w500,
+                                          color: isSelected
+                                              ? AppTheme.primary
+                                              : AppTheme.textSecondary,
                                         ),
                                       ),
                                       if (isSelected)
@@ -443,13 +500,17 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
                                   : () => _requestInstantBooking(service),
                               child: Container(
                                 width: double.infinity,
-                                padding: const EdgeInsets.symmetric(vertical: 18),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 18,
+                                ),
                                 decoration: BoxDecoration(
                                   gradient: AppTheme.primaryGradient,
                                   borderRadius: BorderRadius.circular(22),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: AppTheme.primary.withValues(alpha: 0.3),
+                                      color: AppTheme.primary.withValues(
+                                        alpha: 0.3,
+                                      ),
                                       blurRadius: 16,
                                       offset: const Offset(0, 8),
                                     ),
@@ -467,7 +528,8 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
                                         ),
                                       )
                                     : Row(
-                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
                                         children: [
                                           const Icon(
                                             Icons.flash_on_rounded,
@@ -476,7 +538,8 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
                                           ),
                                           const SizedBox(width: 12),
                                           Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
                                             mainAxisSize: MainAxisSize.min,
                                             children: [
                                               Text(
@@ -491,7 +554,8 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
                                                 'Get a pro at your doorstep in minutes',
                                                 style: GoogleFonts.inter(
                                                   fontSize: 12,
-                                                  color: Colors.white.withValues(alpha: 0.8),
+                                                  color: Colors.white
+                                                      .withValues(alpha: 0.8),
                                                 ),
                                               ),
                                             ],
@@ -505,7 +569,9 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
                               text: 'Confirm Slot',
                               icon: Icons.check_circle_outline_rounded,
                               isLoading: bookingProvider.isLoading,
-                              onPressed: (_selectedDate != null && _selectedSlot != null)
+                              onPressed:
+                                  (_selectedDate != null &&
+                                      _selectedSlot != null)
                                   ? () => _createDirectBooking(service)
                                   : null,
                             );
@@ -530,7 +596,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
       padding: const EdgeInsets.all(5),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.82),
-        borderRadius: BorderRadius.circular(31),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(color: AppTheme.primary.withValues(alpha: 0.08)),
         boxShadow: [
           BoxShadow(
@@ -576,7 +642,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
         alignment: Alignment.center,
         decoration: BoxDecoration(
           gradient: selected ? AppTheme.primaryGradient : null,
-          borderRadius: BorderRadius.circular(28),
+          borderRadius: BorderRadius.circular(14),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -605,10 +671,10 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
     final endAt = DateTime.now().add(Duration(minutes: service.duration));
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(22),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppTheme.primary.withValues(alpha: 0.05)),
         boxShadow: [
           BoxShadow(
@@ -641,7 +707,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
               Text(
                 DateFormat('hh:mm a').format(DateTime.now()),
                 style: GoogleFonts.outfit(
-                  fontSize: 36,
+                  fontSize: 30,
                   fontWeight: FontWeight.w900,
                   color: AppTheme.textPrimary,
                 ),
@@ -696,11 +762,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
         return Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              badge.value,
-              size: 16,
-              color: AppTheme.primary,
-            ),
+            Icon(badge.value, size: 16, color: AppTheme.primary),
             const SizedBox(width: 5),
             Text(
               badge.key,
@@ -818,31 +880,8 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
       return;
     }
 
-    // Step 2: Confirm booking with the matched provider
-    final success = await bookingProvider.createBooking();
-
-    if (!mounted) return;
-
-    if (success) {
-      Navigator.pushNamedAndRemoveUntil(
-        context,
-        '/bookings',
-        (route) => route.settings.name == '/home',
-      );
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Booking confirmed successfully!'),
-          backgroundColor: AppTheme.success,
-        ),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(bookingProvider.error ?? 'Failed to create booking'),
-          backgroundColor: AppTheme.error,
-        ),
-      );
-    }
+    // Step 2: Navigate to Match Result / Confirmation Screen
+    Navigator.pushNamed(context, '/match-result');
   }
 
   DateTime _dateWithSlotStart(DateTime date, String slot) {
@@ -852,7 +891,6 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
     final minute = parts.length > 1 ? int.tryParse(parts[1]) ?? 0 : 0;
     return DateTime(date.year, date.month, date.day, hour, minute);
   }
-
 }
 
 class FaucetPainter extends CustomPainter {
@@ -875,36 +913,65 @@ class FaucetPainter extends CustomPainter {
     final path = Path()
       ..moveTo(size.width * 0.1, size.height * 0.6)
       ..lineTo(size.width * 0.5, size.height * 0.6)
-      ..cubicTo(size.width * 0.7, size.height * 0.6, size.width * 0.7, size.height * 0.2, size.width * 0.5, size.height * 0.2)
+      ..cubicTo(
+        size.width * 0.7,
+        size.height * 0.6,
+        size.width * 0.7,
+        size.height * 0.2,
+        size.width * 0.5,
+        size.height * 0.2,
+      )
       ..lineTo(size.width * 0.45, size.height * 0.2)
       ..lineTo(size.width * 0.45, size.height * 0.3)
       ..lineTo(size.width * 0.5, size.height * 0.3)
-      ..cubicTo(size.width * 0.6, size.height * 0.3, size.width * 0.6, size.height * 0.5, size.width * 0.5, size.height * 0.5)
+      ..cubicTo(
+        size.width * 0.6,
+        size.height * 0.3,
+        size.width * 0.6,
+        size.height * 0.5,
+        size.width * 0.5,
+        size.height * 0.5,
+      )
       ..lineTo(size.width * 0.1, size.height * 0.5)
       ..close();
     canvas.drawPath(path, bodyPaint);
 
     // Draw faucet mouth/nozzle
     canvas.drawRect(
-      Rect.fromLTWH(size.width * 0.42, size.height * 0.3, size.width * 0.08, size.height * 0.05),
+      Rect.fromLTWH(
+        size.width * 0.42,
+        size.height * 0.3,
+        size.width * 0.08,
+        size.height * 0.05,
+      ),
       accentPaint,
     );
 
     // Draw handle knob
-    canvas.drawCircle(Offset(size.width * 0.35, size.height * 0.55), 6, handlePaint);
+    canvas.drawCircle(
+      Offset(size.width * 0.35, size.height * 0.55),
+      6,
+      handlePaint,
+    );
 
     // Draw water droplets
     final dropPath = Path()
       ..moveTo(size.width * 0.46, size.height * 0.42)
       ..lineTo(size.width * 0.44, size.height * 0.48)
-      ..arcToPoint(Offset(size.width * 0.48, size.height * 0.48), radius: const Radius.circular(2))
+      ..arcToPoint(
+        Offset(size.width * 0.48, size.height * 0.48),
+        radius: const Radius.circular(2),
+      )
       ..close();
     canvas.drawPath(dropPath, waterPaint);
 
     final dropPath2 = Path()
       ..moveTo(size.width * 0.46, size.height * 0.54)
       ..lineTo(size.width * 0.44, size.height * 0.6)
-      ..arcToPoint(Offset(size.width * 0.48, size.height * 0.6), radius: const Radius.circular(2))
+      ..arcToPoint(
+        Offset(size.width * 0.48, size.height * 0.6),
+        radius: const Radius.circular(2),
+      )
       ..close();
     canvas.drawPath(dropPath2, waterPaint);
   }
@@ -933,21 +1000,36 @@ class PipesPainter extends CustomPainter {
     );
     // Vertical pipe going down
     canvas.drawRect(
-      Rect.fromLTWH(size.width * 0.5, size.height * 0.4, size.width * 0.16, size.height * 0.5),
+      Rect.fromLTWH(
+        size.width * 0.5,
+        size.height * 0.4,
+        size.width * 0.16,
+        size.height * 0.5,
+      ),
       pipePaint,
     );
 
     // Pipe joints/collars
     canvas.drawRRect(
       RRect.fromRectAndRadius(
-        Rect.fromLTWH(size.width * 0.47, size.height * 0.37, size.width * 0.22, size.height * 0.08),
+        Rect.fromLTWH(
+          size.width * 0.47,
+          size.height * 0.37,
+          size.width * 0.22,
+          size.height * 0.08,
+        ),
         const Radius.circular(3),
       ),
       jointPaint,
     );
     canvas.drawRRect(
       RRect.fromRectAndRadius(
-        Rect.fromLTWH(size.width * 0.76, size.height * 0.38, size.width * 0.08, size.height * 0.2),
+        Rect.fromLTWH(
+          size.width * 0.76,
+          size.height * 0.38,
+          size.width * 0.08,
+          size.height * 0.2,
+        ),
         const Radius.circular(3),
       ),
       jointPaint,
@@ -957,7 +1039,10 @@ class PipesPainter extends CustomPainter {
     final drop = Path()
       ..moveTo(size.width * 0.58, size.height * 0.48)
       ..lineTo(size.width * 0.55, size.height * 0.56)
-      ..arcToPoint(Offset(size.width * 0.61, size.height * 0.56), radius: const Radius.circular(3))
+      ..arcToPoint(
+        Offset(size.width * 0.61, size.height * 0.56),
+        radius: const Radius.circular(3),
+      )
       ..close();
     canvas.drawPath(drop, dropPaint);
   }
@@ -986,7 +1071,11 @@ class WrenchPainter extends CustomPainter {
     canvas.drawPath(handle, metalPaint);
 
     // Draw wrench head
-    canvas.drawCircle(Offset(size.width * 0.65, size.height * 0.45), 14, metalPaint);
+    canvas.drawCircle(
+      Offset(size.width * 0.65, size.height * 0.45),
+      14,
+      metalPaint,
+    );
 
     // Draw wrench head cutout
     final cutout = Path()

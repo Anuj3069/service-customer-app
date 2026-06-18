@@ -12,7 +12,8 @@ class PaymentResultScreen extends StatefulWidget {
   State<PaymentResultScreen> createState() => _PaymentResultScreenState();
 }
 
-class _PaymentResultScreenState extends State<PaymentResultScreen> with SingleTickerProviderStateMixin {
+class _PaymentResultScreenState extends State<PaymentResultScreen>
+    with SingleTickerProviderStateMixin {
   late AnimationController _animController;
   late Animation<double> _scaleAnimation;
   late Animation<double> _fadeAnimation;
@@ -51,7 +52,8 @@ class _PaymentResultScreenState extends State<PaymentResultScreen> with SingleTi
   @override
   Widget build(BuildContext context) {
     // Parse arguments
-    final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+    final args =
+        ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
     _booking = args['booking'] as Booking?;
     _success = args['success'] as bool? ?? false;
     _message = args['message'] as String? ?? '';
@@ -75,19 +77,19 @@ class _PaymentResultScreenState extends State<PaymentResultScreen> with SingleTi
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 const Spacer(),
-                
+
                 // Animated Status Icon
                 ScaleTransition(
                   scale: _scaleAnimation,
                   child: Container(
-                    width: 100,
-                    height: 100,
+                    width: 82,
+                    height: 82,
                     decoration: BoxDecoration(
-                      shape: BoxShape.circle,
+                      borderRadius: BorderRadius.circular(20),
                       color: statusColor.withValues(alpha: 0.1),
                       border: Border.all(
                         color: statusColor.withValues(alpha: 0.25),
-                        width: 4,
+                        width: 2,
                       ),
                       boxShadow: [
                         BoxShadow(
@@ -99,9 +101,11 @@ class _PaymentResultScreenState extends State<PaymentResultScreen> with SingleTi
                     ),
                     child: Center(
                       child: Icon(
-                        _success ? Icons.check_circle_rounded : Icons.cancel_rounded,
+                        _success
+                            ? Icons.check_circle_rounded
+                            : Icons.cancel_rounded,
                         color: statusColor,
-                        size: 60,
+                        size: 42,
                       ),
                     ),
                   ),
@@ -114,7 +118,7 @@ class _PaymentResultScreenState extends State<PaymentResultScreen> with SingleTi
                   child: Text(
                     _success ? 'Payment Successful' : 'Payment Failed',
                     style: GoogleFonts.outfit(
-                      fontSize: 26,
+                      fontSize: 24,
                       fontWeight: FontWeight.w800,
                       color: AppTheme.textPrimary,
                     ),
@@ -143,7 +147,7 @@ class _PaymentResultScreenState extends State<PaymentResultScreen> with SingleTi
                 FadeTransition(
                   opacity: _fadeAnimation,
                   child: GlassCard(
-                    padding: const EdgeInsets.all(24),
+                    padding: const EdgeInsets.all(16),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -159,12 +163,15 @@ class _PaymentResultScreenState extends State<PaymentResultScreen> with SingleTi
                         _detailRow('Service', booking.serviceName),
                         _detailRow('Provider', booking.providerName),
                         _detailRow('Amount Paid', '₹${booking.price.toInt()}'),
-                        _detailRow('Booking ID', '#${booking.id.substring(booking.id.length - 8).toUpperCase()}'),
+                        _detailRow(
+                          'Booking ID',
+                          '#${booking.id.substring(booking.id.length - 8).toUpperCase()}',
+                        ),
                       ],
                     ),
                   ),
                 ),
-                
+
                 const Spacer(flex: 2),
 
                 // Action Buttons
@@ -184,13 +191,18 @@ class _PaymentResultScreenState extends State<PaymentResultScreen> with SingleTi
                         const SizedBox(height: 12),
                       ],
                       GradientButton(
-                        text: _success ? 'View Booking Details' : 'Back to Booking',
+                        text: _success
+                            ? 'View Booking Details'
+                            : 'Back to Booking',
                         icon: Icons.event_note_rounded,
                         // Make sure we pop/navigate back correctly
                         onPressed: () {
                           // Pop back or navigate back to the detail screen.
                           // Pop back all checkout/result screens and refresh booking details
-                          Navigator.popUntil(context, ModalRoute.withName('/booking-detail'));
+                          Navigator.popUntil(
+                            context,
+                            ModalRoute.withName('/booking-detail'),
+                          );
                         },
                       ),
                     ],
@@ -213,10 +225,7 @@ class _PaymentResultScreenState extends State<PaymentResultScreen> with SingleTi
         children: [
           Text(
             label,
-            style: GoogleFonts.inter(
-              fontSize: 13,
-              color: AppTheme.textMuted,
-            ),
+            style: GoogleFonts.inter(fontSize: 13, color: AppTheme.textMuted),
           ),
           Text(
             value,

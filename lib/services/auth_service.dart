@@ -58,4 +58,31 @@ class AuthService {
   Future<void> logout() async {
     await ApiClient.clearAll();
   }
+
+  /// Send OTP to customer's email
+  Future<Map<String, dynamic>> sendOtp({required String email}) async {
+    return await ApiClient.post(ApiConfig.sendOtp, {'email': email}, auth: false);
+  }
+
+  /// Verify OTP and log in customer
+  Future<AuthResponse> verifyOtp({
+    required String email,
+    required String otp,
+  }) async {
+    final response = await ApiClient.post(
+      ApiConfig.verifyOtp,
+      {'email': email, 'otp': otp},
+      auth: false,
+    );
+    final authResponse = AuthResponse.fromJson(response['data']);
+
+    // Save tokens and user data
+    await ApiClient.saveTokens(
+      authResponse.tokens.accessToken,
+      authResponse.tokens.refreshToken,
+    );
+    await ApiClient.saveUserData(authResponse.user.toJson());
+
+    return authResponse;
+  }
 }

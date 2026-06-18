@@ -21,31 +21,85 @@ class _BookingsScreenState extends State<BookingsScreen>
 
   IconData _getCategoryIcon(String serviceName) {
     final name = serviceName.toLowerCase();
-    if (name.contains('plumb') || name.contains('tap') || name.contains('pipe')) return Icons.plumbing_rounded;
-    if (name.contains('clean') || name.contains('dust') || name.contains('wash')) return Icons.cleaning_services_rounded;
-    if (name.contains('electr') || name.contains('wiring') || name.contains('switch')) return Icons.electrical_services_rounded;
-    if (name.contains('paint') || name.contains('wall')) return Icons.format_paint_rounded;
-    if (name.contains('handy') || name.contains('repair') || name.contains('mount')) return Icons.handyman_rounded;
+    if (name.contains('plumb') ||
+        name.contains('tap') ||
+        name.contains('pipe')) {
+      return Icons.plumbing_rounded;
+    }
+    if (name.contains('clean') ||
+        name.contains('dust') ||
+        name.contains('wash')) {
+      return Icons.cleaning_services_rounded;
+    }
+    if (name.contains('electr') ||
+        name.contains('wiring') ||
+        name.contains('switch')) {
+      return Icons.electrical_services_rounded;
+    }
+    if (name.contains('paint') || name.contains('wall')) {
+      return Icons.format_paint_rounded;
+    }
+    if (name.contains('handy') ||
+        name.contains('repair') ||
+        name.contains('mount')) {
+      return Icons.handyman_rounded;
+    }
     return Icons.home_repair_service_rounded;
   }
 
   Color _getCategoryColor(String serviceName) {
     final name = serviceName.toLowerCase();
-    if (name.contains('plumb') || name.contains('tap') || name.contains('pipe')) return const Color(0xFFEFF7FF);
-    if (name.contains('clean') || name.contains('dust') || name.contains('wash')) return const Color(0xFFF0EDFF);
-    if (name.contains('electr') || name.contains('wiring') || name.contains('switch')) return const Color(0xFFFFF4E1);
-    if (name.contains('paint') || name.contains('wall')) return const Color(0xFFFFF0F7);
-    if (name.contains('handy') || name.contains('repair') || name.contains('mount')) return const Color(0xFFFFF1E9);
+    if (name.contains('plumb') ||
+        name.contains('tap') ||
+        name.contains('pipe')) {
+      return const Color(0xFFEFF7FF);
+    }
+    if (name.contains('clean') ||
+        name.contains('dust') ||
+        name.contains('wash')) {
+      return const Color(0xFFEFFBF3);
+    }
+    if (name.contains('electr') ||
+        name.contains('wiring') ||
+        name.contains('switch')) {
+      return const Color(0xFFF0F5FF);
+    }
+    if (name.contains('paint') || name.contains('wall')) {
+      return const Color(0xFFFFF2E8);
+    }
+    if (name.contains('handy') ||
+        name.contains('repair') ||
+        name.contains('mount')) {
+      return const Color(0xFFFFF1E9);
+    }
     return const Color(0xFFF1F6FF);
   }
 
   Color _getCategoryIconColor(String serviceName) {
     final name = serviceName.toLowerCase();
-    if (name.contains('plumb') || name.contains('tap') || name.contains('pipe')) return const Color(0xFF2196F3);
-    if (name.contains('clean') || name.contains('dust') || name.contains('wash')) return const Color(0xFF673AB7);
-    if (name.contains('electr') || name.contains('wiring') || name.contains('switch')) return const Color(0xFFFF9800);
-    if (name.contains('paint') || name.contains('wall')) return const Color(0xFFE91E63);
-    if (name.contains('handy') || name.contains('repair') || name.contains('mount')) return const Color(0xFFFF5722);
+    if (name.contains('plumb') ||
+        name.contains('tap') ||
+        name.contains('pipe')) {
+      return const Color(0xFF7B3FE4);
+    }
+    if (name.contains('clean') ||
+        name.contains('dust') ||
+        name.contains('wash')) {
+      return const Color(0xFF20A852);
+    }
+    if (name.contains('electr') ||
+        name.contains('wiring') ||
+        name.contains('switch')) {
+      return const Color(0xFF2F80ED);
+    }
+    if (name.contains('paint') || name.contains('wall')) {
+      return const Color(0xFFFF6B2C);
+    }
+    if (name.contains('handy') ||
+        name.contains('repair') ||
+        name.contains('mount')) {
+      return const Color(0xFFFF5722);
+    }
     return const Color(0xFF3F51B5);
   }
 
@@ -62,9 +116,9 @@ class _BookingsScreenState extends State<BookingsScreen>
   void _onTabChanged() {
     if (!_tabController.indexIsChanging) {
       final status = _tabs[_tabController.index].toLowerCase();
-      context
-          .read<BookingProvider>()
-          .fetchBookings(status: status == 'all' ? null : status);
+      context.read<BookingProvider>().fetchBookings(
+        status: status == 'all' ? null : status,
+      );
     }
   }
 
@@ -84,9 +138,8 @@ class _BookingsScreenState extends State<BookingsScreen>
             children: [
               // Connection status banner (Redis socket state)
               Consumer<BookingProvider>(
-                builder: (_, bp, __) => ConnectionBanner(
-                  isConnected: bp.isSocketConnected,
-                ),
+                builder: (_, bp, __) =>
+                    ConnectionBanner(isConnected: bp.isSocketConnected),
               ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
@@ -118,7 +171,7 @@ class _BookingsScreenState extends State<BookingsScreen>
                     Text(
                       'My Bookings',
                       style: GoogleFonts.outfit(
-                        fontSize: 22,
+                        fontSize: 18,
                         fontWeight: FontWeight.w800,
                         color: AppTheme.textPrimary,
                       ),
@@ -173,8 +226,8 @@ class _BookingsScreenState extends State<BookingsScreen>
               Container(
                 margin: const EdgeInsets.symmetric(horizontal: 20),
                 decoration: BoxDecoration(
-                  color: AppTheme.surface,
-                  borderRadius: BorderRadius.circular(14),
+                  color: Colors.white.withValues(alpha: 0.88),
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: TabBar(
                   controller: _tabController,
@@ -211,8 +264,11 @@ class _BookingsScreenState extends State<BookingsScreen>
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.calendar_today_rounded,
-                                color: AppTheme.textMuted, size: 64),
+                            Icon(
+                              Icons.calendar_today_rounded,
+                              color: AppTheme.textMuted,
+                              size: 64,
+                            ),
                             const SizedBox(height: 16),
                             Text(
                               'No bookings yet',
@@ -270,10 +326,8 @@ class _BookingsScreenState extends State<BookingsScreen>
       margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: AppTheme.primary.withValues(alpha: 0.05),
-        ),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppTheme.primary.withValues(alpha: 0.05)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.03),
@@ -284,7 +338,7 @@ class _BookingsScreenState extends State<BookingsScreen>
       ),
       child: Material(
         color: Colors.transparent,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(12),
         child: InkWell(
           onTap: () {
             Navigator.pushNamed(
@@ -296,24 +350,20 @@ class _BookingsScreenState extends State<BookingsScreen>
               context.read<BookingProvider>().fetchBookings();
             });
           },
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(12),
           child: Padding(
             padding: const EdgeInsets.all(14),
             child: Row(
               children: [
                 // Left Icon
                 Container(
-                  width: 58,
-                  height: 58,
+                  width: 46,
+                  height: 46,
                   decoration: BoxDecoration(
                     color: bgColor,
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(10),
                   ),
-                  child: Icon(
-                    icon,
-                    color: iconColor,
-                    size: 28,
-                  ),
+                  child: Icon(icon, color: iconColor, size: 24),
                 ),
                 const SizedBox(width: 14),
                 // Middle Details
@@ -334,8 +384,11 @@ class _BookingsScreenState extends State<BookingsScreen>
                       const SizedBox(height: 5),
                       Row(
                         children: [
-                          const Icon(Icons.calendar_today_rounded,
-                              size: 13, color: AppTheme.textMuted),
+                          const Icon(
+                            Icons.calendar_today_rounded,
+                            size: 13,
+                            color: AppTheme.textMuted,
+                          ),
                           const SizedBox(width: 4),
                           Text(
                             booking.date?.split('T')[0] ?? 'Instant',
@@ -346,8 +399,11 @@ class _BookingsScreenState extends State<BookingsScreen>
                             ),
                           ),
                           const SizedBox(width: 10),
-                          const Icon(Icons.access_time_rounded,
-                              size: 13, color: AppTheme.textMuted),
+                          const Icon(
+                            Icons.access_time_rounded,
+                            size: 13,
+                            color: AppTheme.textMuted,
+                          ),
                           const SizedBox(width: 4),
                           Text(
                             booking.slot ?? 'Now',
@@ -396,13 +452,17 @@ class _BookingsScreenState extends State<BookingsScreen>
                             },
                             child: Container(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 10, vertical: 5),
+                                horizontal: 10,
+                                vertical: 5,
+                              ),
                               decoration: BoxDecoration(
                                 gradient: AppTheme.primaryGradient,
                                 borderRadius: BorderRadius.circular(12),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: AppTheme.primary.withValues(alpha: 0.3),
+                                    color: AppTheme.primary.withValues(
+                                      alpha: 0.3,
+                                    ),
                                     blurRadius: 6,
                                     offset: const Offset(0, 3),
                                   ),
@@ -452,9 +512,7 @@ class _BookingsScreenState extends State<BookingsScreen>
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.8),
         border: Border(
-          top: BorderSide(
-            color: AppTheme.primary.withValues(alpha: 0.08),
-          ),
+          top: BorderSide(color: AppTheme.primary.withValues(alpha: 0.08)),
         ),
       ),
       child: const Row(
@@ -464,14 +522,8 @@ class _BookingsScreenState extends State<BookingsScreen>
             icon: Icons.verified_user_rounded,
             label: 'Verified Pros',
           ),
-          _TrustBadgeItem(
-            icon: Icons.timer_rounded,
-            label: 'On-time Service',
-          ),
-          _TrustBadgeItem(
-            icon: Icons.security_rounded,
-            label: 'Secure & Safe',
-          ),
+          _TrustBadgeItem(icon: Icons.timer_rounded, label: 'On-time Service'),
+          _TrustBadgeItem(icon: Icons.security_rounded, label: 'Secure & Safe'),
         ],
       ),
     );
@@ -489,11 +541,7 @@ class _TrustBadgeItem extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(
-          icon,
-          size: 16,
-          color: AppTheme.primary,
-        ),
+        Icon(icon, size: 16, color: AppTheme.primary),
         const SizedBox(width: 5),
         Text(
           label,
