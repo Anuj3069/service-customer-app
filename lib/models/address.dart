@@ -59,32 +59,33 @@ class Address {
   }
 
   Map<String, dynamic> toJson() => {
-        'label': label,
-        if (customLabel != null) 'customLabel': customLabel,
-        'fullAddress': fullAddress,
-        if (addressLine2 != null && addressLine2!.isNotEmpty)
-          'addressLine2': addressLine2,
-        if (city != null && city!.isNotEmpty) 'city': city,
-        if (state != null && state!.isNotEmpty) 'state': state,
-        if (pincode != null && pincode!.isNotEmpty) 'pincode': pincode,
-        'location': {
-          'type': 'Point',
-          'coordinates': coordinates,
-        },
-        if (placeId != null && placeId!.isNotEmpty) 'placeId': placeId,
-        'isDefault': isDefault,
-      };
+    'label': label,
+    if (customLabel != null) 'customLabel': customLabel,
+    'fullAddress': fullAddress,
+    if (addressLine2 != null && addressLine2!.isNotEmpty)
+      'addressLine2': addressLine2,
+    if (city != null && city!.isNotEmpty) 'city': city,
+    if (state != null && state!.isNotEmpty) 'state': state,
+    if (pincode != null && pincode!.isNotEmpty) 'pincode': pincode,
+    'location': {'type': 'Point', 'coordinates': coordinates},
+    if (placeId != null && placeId!.isNotEmpty) 'placeId': placeId,
+    'isDefault': isDefault,
+  };
 
   /// Convert to the customerLocation format expected by the booking API
-  Map<String, dynamic> toCustomerLocation() => {
-        'coordinates': coordinates,
-        'address': displayName,
-        'addressId': id,
-        'fullAddress': fullAddress,
-        if (addressLine2 != null && addressLine2!.isNotEmpty)
-          'addressLine2': addressLine2,
-        'label': label,
-      };
+  Map<String, dynamic> toCustomerLocation() {
+    final isPersistedAddress = RegExp(r'^[0-9a-fA-F]{24}$').hasMatch(id);
+
+    return {
+      'coordinates': coordinates,
+      'address': displayName,
+      if (isPersistedAddress) 'addressId': id,
+      'fullAddress': fullAddress,
+      if (addressLine2 != null && addressLine2!.isNotEmpty)
+        'addressLine2': addressLine2,
+      'label': label,
+    };
+  }
 
   /// Display label (e.g., "Home", "Work", or custom label)
   String get displayLabel {
@@ -185,7 +186,8 @@ class PlacePrediction {
     return PlacePrediction(
       placeId: json['place_id']?.toString() ?? '',
       displayName: json['display_name'] ?? '',
-      city: address['city'] ??
+      city:
+          address['city'] ??
           address['town'] ??
           address['village'] ??
           address['suburb'],

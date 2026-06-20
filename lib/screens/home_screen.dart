@@ -109,145 +109,83 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.94),
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
-          boxShadow: [
-            BoxShadow(
-              color: AppTheme.primary.withValues(alpha: 0.08),
-              blurRadius: 20,
-              offset: const Offset(0, -6),
-            ),
-          ],
-        ),
-        child: BottomNavigationBar(
-          currentIndex: _currentIndex,
-          onTap: (index) {
-            setState(() => _currentIndex = index);
-            if (index == 2) {
-              Navigator.pushNamed(context, '/bookings');
-              setState(() => _currentIndex = 0);
-            }
-          },
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.home_filled),
-              label: 'Home',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.work_rounded),
-              label: 'Services',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.schedule_rounded),
-              label: 'Activity',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.person_rounded),
-              label: 'Account',
-            ),
-          ],
-        ),
-      ),
+      bottomNavigationBar: _buildReferenceBottomNav(),
     );
   }
 
   Widget _buildHomeTab() {
-    return SafeArea(
-      child: Column(
-        children: [
-          // Connection status banner (Redis socket state)
-          Consumer<BookingProvider>(
-            builder: (_, bp, __) =>
-                ConnectionBanner(isConnected: bp.isSocketConnected),
-          ),
-          Expanded(
-            child: SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+    return Column(
+      children: [
+        Consumer<BookingProvider>(
+          builder: (_, bp, __) =>
+              ConnectionBanner(isConnected: bp.isSocketConnected),
+        ),
+        Expanded(
+          child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (_selectedCategory == null) ...[
                   _buildHeader(),
-                  if (_selectedCategory == null) ...[
-                    const SizedBox(height: 20),
-                    _buildSearchToggle(),
-                    const SizedBox(height: 22),
-                    _buildRecentPlaces(),
-                    const SizedBox(height: 24),
-                    _buildSectionTitle('Select Service Category'),
-                  ] else ...[
-                    const SizedBox(height: 20),
-                  ],
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 16),
+                  _buildSectionTitle('Select Service Category'),
+                  const SizedBox(height: 10),
                   _buildServicesList(),
-                  const SizedBox(height: 22),
-                  if (_selectedCategory == null) _buildBottomMessage(),
-                  const SizedBox(height: 100),
+                  const SizedBox(height: 12),
+                  _buildAllServicesCard(),
+                  const SizedBox(height: 12),
+                  _buildBookingSection(),
+                  const SizedBox(height: 12),
+                  _buildPromoBanner(),
+                ] else ...[
+                  SizedBox(height: MediaQuery.of(context).padding.top + 18),
+                  _buildCategoryServices(_selectedCategory!),
                 ],
-              ),
+                const SizedBox(height: 92),
+              ],
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
   Widget _buildHeader() {
-    return Consumer<AuthProvider>(
-      builder: (context, auth, _) {
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(20, 18, 20, 0),
-          child: Row(
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.fromLTRB(
+        16,
+        MediaQuery.of(context).padding.top + 12,
+        16,
+        16,
+      ),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Color(0xFF075FF4), Color(0xFF0043D1)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.vertical(bottom: Radius.circular(18)),
+      ),
+      child: Column(
+        children: [
+          Row(
             children: [
-              Container(
-                width: 46,
-                height: 46,
-                decoration: BoxDecoration(
-                  gradient: AppTheme.primaryGradient,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Center(
-                  child: Text(
-                    (auth.user?.name ?? 'U')[0].toUpperCase(),
-                    style: GoogleFonts.outfit(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
+              const Icon(
+                Icons.location_on_rounded,
+                color: Colors.white,
+                size: 22,
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Hello,',
-                      style: GoogleFonts.inter(
-                        fontSize: 12,
-                        color: AppTheme.textMuted,
-                      ),
-                    ),
-                    Text(
-                      auth.user?.name ?? 'User',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.outfit(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w800,
-                        color: AppTheme.textPrimary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              const SizedBox(width: 6),
+              Expanded(child: _buildHeaderLocation()),
               _buildNotificationBell(),
             ],
           ),
-        );
-      },
+          const SizedBox(height: 14),
+          _buildSearchToggle(),
+        ],
+      ),
     );
   }
 
@@ -297,88 +235,86 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildSearchToggle() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: GestureDetector(
-        onTap: () => Navigator.pushNamed(context, '/address-search'),
-        child: Container(
-          height: 58,
-          padding: const EdgeInsets.all(5),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.94),
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: AppTheme.primary.withValues(alpha: 0.10)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 16,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
+  Widget _buildHeaderLocation() {
+    return Consumer<AddressProvider>(
+      builder: (context, ap, _) {
+        final selected = ap.selectedAddress;
+        final label = selected == null
+            ? 'Howrah, West Bengal'
+            : '${selected.displayLabel}, ${selected.shortAddress}';
+
+        return GestureDetector(
+          onTap: () => Navigator.pushNamed(context, '/address-search'),
           child: Row(
             children: [
-              const SizedBox(width: 12),
-              const Icon(
-                Icons.search_rounded,
-                size: 24,
-                color: AppTheme.textMuted,
-              ),
-              const SizedBox(width: 10),
               Expanded(
-                child: Consumer<AddressProvider>(
-                  builder: (context, ap, _) {
-                    final selected = ap.selectedAddress;
-                    if (selected != null) {
-                      return Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            selected.displayLabel,
-                            style: GoogleFonts.outfit(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w800,
-                              color: AppTheme.textPrimary,
-                            ),
-                          ),
-                          Text(
-                            selected.shortAddress,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: GoogleFonts.inter(
-                              fontSize: 11,
-                              color: AppTheme.textMuted,
-                            ),
-                          ),
-                        ],
-                      );
-                    }
-                    return Text(
-                      'Where to...',
-                      style: GoogleFonts.inter(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                        color: AppTheme.textMuted,
-                      ),
-                    );
-                  },
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.outfit(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                  ),
                 ),
               ),
-              _togglePill('Now', _bookNow, () => setState(() => _bookNow = true)),
-              _togglePill(
-                'Later',
-                !_bookNow,
-                () => setState(() => _bookNow = false),
+              const SizedBox(width: 4),
+              const Icon(
+                Icons.keyboard_arrow_down_rounded,
+                color: Colors.white,
+                size: 18,
               ),
             ],
           ),
+        );
+      },
+    );
+  }
+
+  Widget _buildSearchToggle() {
+    return GestureDetector(
+      onTap: () => setState(() => _currentIndex = 1),
+      child: Container(
+        height: 48,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(8),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.10),
+              blurRadius: 16,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            const Icon(
+              Icons.search_rounded,
+              size: 23,
+              color: AppTheme.textMuted,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'Search for a service',
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.textSecondary,
+                ),
+              ),
+            ),
+            const Icon(Icons.tune_rounded, color: AppTheme.primary, size: 22),
+          ],
         ),
       ),
     );
   }
 
+  // ignore: unused_element
   Widget _togglePill(String text, bool selected, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
@@ -403,6 +339,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  // ignore: unused_element
   Widget _buildRecentPlaces() {
     return Consumer<AddressProvider>(
       builder: (context, ap, _) {
@@ -418,7 +355,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.76),
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: AppTheme.primary.withValues(alpha: 0.15)),
+                  border: Border.all(
+                    color: AppTheme.primary.withValues(alpha: 0.15),
+                  ),
                 ),
                 child: Row(
                   children: [
@@ -486,7 +425,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 },
                 child: Container(
                   margin: const EdgeInsets.symmetric(horizontal: 14),
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 12,
+                  ),
                   decoration: BoxDecoration(
                     color: ap.selectedAddress?.id == addr.id
                         ? AppTheme.primary.withValues(alpha: 0.05)
@@ -503,7 +445,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         width: 42,
                         height: 42,
                         decoration: BoxDecoration(
-                          color: _getAddressColor(addr.label).withValues(alpha: 0.10),
+                          color: _getAddressColor(
+                            addr.label,
+                          ).withValues(alpha: 0.10),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Icon(
@@ -533,9 +477,13 @@ class _HomeScreenState extends State<HomeScreen> {
                                   const SizedBox(width: 8),
                                   Container(
                                     padding: const EdgeInsets.symmetric(
-                                      horizontal: 6, vertical: 2),
+                                      horizontal: 6,
+                                      vertical: 2,
+                                    ),
                                     decoration: BoxDecoration(
-                                      color: AppTheme.success.withValues(alpha: 0.1),
+                                      color: AppTheme.success.withValues(
+                                        alpha: 0.1,
+                                      ),
                                       borderRadius: BorderRadius.circular(6),
                                     ),
                                     child: Text(
@@ -582,30 +530,387 @@ class _HomeScreenState extends State<HomeScreen> {
 
   IconData _getAddressIcon(String label) {
     switch (label) {
-      case 'home': return Icons.home_rounded;
-      case 'work': return Icons.work_rounded;
-      default: return Icons.location_on_rounded;
+      case 'home':
+        return Icons.home_rounded;
+      case 'work':
+        return Icons.work_rounded;
+      default:
+        return Icons.location_on_rounded;
     }
   }
 
   Color _getAddressColor(String label) {
     switch (label) {
-      case 'home': return AppTheme.primary;
-      case 'work': return AppTheme.accent;
-      default: return AppTheme.success;
+      case 'home':
+        return AppTheme.primary;
+      case 'work':
+        return AppTheme.accent;
+      default:
+        return AppTheme.success;
     }
   }
 
+  double _categoryStartingPrice(Category category) {
+    if (category.services.isEmpty) return 299;
+    return category.services
+        .map((service) => service.basePrice)
+        .where((price) => price > 0)
+        .fold<double>(
+          category.services.first.basePrice > 0
+              ? category.services.first.basePrice
+              : 299,
+          (lowest, price) => price < lowest ? price : lowest,
+        );
+  }
 
+  Widget _buildAllServicesCard() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(8),
+        child: InkWell(
+          onTap: () => setState(() => _currentIndex = 1),
+          borderRadius: BorderRadius.circular(8),
+          child: Container(
+            height: 56,
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            decoration: BoxDecoration(
+              gradient: AppTheme.primaryGradient,
+              borderRadius: BorderRadius.circular(8),
+              boxShadow: [
+                BoxShadow(
+                  color: AppTheme.primary.withValues(alpha: 0.24),
+                  blurRadius: 14,
+                  offset: const Offset(0, 7),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 34,
+                  height: 34,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.22),
+                    ),
+                  ),
+                  child: const Icon(
+                    Icons.grid_view_rounded,
+                    color: Colors.white,
+                    size: 21,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'All Services',
+                        style: GoogleFonts.outfit(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                        ),
+                      ),
+                      Text(
+                        'Browse everything in one place',
+                        style: GoogleFonts.inter(
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white.withValues(alpha: 0.88),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Icon(
+                  Icons.chevron_right_rounded,
+                  color: Colors.white,
+                  size: 26,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBookingSection() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: const Color(0xFFE8ECF4)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 12,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFF2E2),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(
+                Icons.calendar_month_rounded,
+                color: Color(0xFFFF8A00),
+                size: 30,
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    _bookNow ? 'Book\nNow' : 'Book\nLater',
+                    style: GoogleFonts.outfit(
+                      fontSize: 16,
+                      height: 0.95,
+                      fontWeight: FontWeight.w900,
+                      color: AppTheme.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  Text(
+                    _bookNow
+                        ? 'Get help from nearby pros'
+                        : 'Pick a schedule that fits your routine',
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.inter(
+                      fontSize: 10.5,
+                      height: 1.15,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            Column(
+              children: [
+                _bookingModeChip('Book Now', _bookNow, () {
+                  setState(() => _bookNow = true);
+                }),
+                const SizedBox(height: 7),
+                _bookingModeChip('Book Later', !_bookNow, () {
+                  setState(() => _bookNow = false);
+                }),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _bookingModeChip(String label, bool selected, VoidCallback onTap) {
+    return SizedBox(
+      width: 104,
+      height: 31,
+      child: ElevatedButton(
+        onPressed: onTap,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: selected ? const Color(0xFFFF7A00) : Colors.white,
+          foregroundColor: selected ? Colors.white : AppTheme.primary,
+          padding: EdgeInsets.zero,
+          elevation: 0,
+          side: BorderSide(
+            color: selected
+                ? const Color(0xFFFF7A00)
+                : AppTheme.primary.withValues(alpha: 0.22),
+          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+        ),
+        child: Text(
+          label,
+          style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w800),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPromoBanner() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Container(
+        height: 92,
+        padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+        decoration: BoxDecoration(
+          color: const Color(0xFF061D4A),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Stack(
+          children: [
+            Positioned(
+              right: 7,
+              top: 2,
+              child: Container(
+                width: 50,
+                height: 50,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: const Color(0xFFFFA400), width: 2),
+                ),
+                child: Center(
+                  child: Text(
+                    '15\nMIN',
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.outfit(
+                      fontSize: 13,
+                      height: 0.9,
+                      fontWeight: FontWeight.w900,
+                      color: const Color(0xFFFFA400),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              left: 0,
+              top: 0,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFF7A00),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  'NEW',
+                  style: GoogleFonts.inter(
+                    fontSize: 8,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              left: 0,
+              top: 17,
+              child: Text(
+                'Help arrives in\n15 min',
+                style: GoogleFonts.outfit(
+                  fontSize: 17,
+                  height: 0.93,
+                  fontWeight: FontWeight.w900,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+            Positioned(
+              left: 0,
+              top: 53,
+              child: Text(
+                'Trusted professionals.\nOn-time, every time.',
+                style: GoogleFonts.inter(
+                  fontSize: 8.5,
+                  height: 1.12,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white.withValues(alpha: 0.86),
+                ),
+              ),
+            ),
+            Positioned(
+              right: 92,
+              top: 16,
+              child: Icon(
+                Icons.engineering_rounded,
+                color: const Color(0xFF0D6BFF),
+                size: 50,
+              ),
+            ),
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: Row(
+                children: [
+                  _promoStat(
+                    Icons.flash_on_rounded,
+                    'Quick Response\nWithin 15 min',
+                  ),
+                  _promoStat(
+                    Icons.verified_user_rounded,
+                    'Verified & Trusted\n100% safe',
+                  ),
+                  _promoStat(Icons.eco_rounded, 'Top Rated\nProfessionals'),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _promoStat(IconData icon, String text) {
+    return Expanded(
+      child: Row(
+        children: [
+          Container(
+            width: 21,
+            height: 21,
+            decoration: const BoxDecoration(
+              color: Color(0xFF14376F),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: const Color(0xFFFFB21A), size: 13),
+          ),
+          const SizedBox(width: 4),
+          Expanded(
+            child: Text(
+              text,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.inter(
+                fontSize: 7,
+                height: 1.05,
+                fontWeight: FontWeight.w700,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _buildSectionTitle(String title) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
         children: [
+          if (title == 'Select Service Category') ...[
+            const Icon(
+              Icons.grid_view_rounded,
+              color: AppTheme.primary,
+              size: 18,
+            ),
+            const SizedBox(width: 8),
+          ],
           Expanded(
             child: Text(
-              title == 'Select Service Category' ? 'Service Categories' : title,
+              title == 'Select Service Category' ? 'Service Category' : title,
               style: GoogleFonts.outfit(
                 fontSize: 16,
                 fontWeight: FontWeight.w800,
@@ -614,12 +919,25 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           if (title == 'Select Service Category')
-            Text(
-              'View all  >',
-              style: GoogleFonts.inter(
-                fontSize: 12,
-                fontWeight: FontWeight.w800,
-                color: AppTheme.primary,
+            GestureDetector(
+              onTap: () => setState(() => _currentIndex = 1),
+              child: Row(
+                children: [
+                  Text(
+                    'View All',
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                      color: AppTheme.primary,
+                    ),
+                  ),
+                  const SizedBox(width: 3),
+                  const Icon(
+                    Icons.chevron_right_rounded,
+                    color: AppTheme.primary,
+                    size: 18,
+                  ),
+                ],
               ),
             ),
         ],
@@ -677,32 +995,33 @@ class _HomeScreenState extends State<HomeScreen> {
           return GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            padding: const EdgeInsets.symmetric(horizontal: 20),
+            padding: const EdgeInsets.symmetric(horizontal: 16),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              mainAxisSpacing: 14,
-              crossAxisSpacing: 14,
-              childAspectRatio: 2.35,
+              crossAxisCount: 4,
+              mainAxisSpacing: 8,
+              crossAxisSpacing: 8,
+              childAspectRatio: 0.74,
             ),
-            itemCount: serviceProvider.services.length,
+            itemCount: serviceProvider.services.take(8).length,
             itemBuilder: (context, index) =>
                 _buildServiceTile(serviceProvider.services[index], index),
           );
         }
 
+        final displayCategories = categories.take(8).toList();
         return GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          padding: const EdgeInsets.symmetric(horizontal: 20),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            mainAxisSpacing: 14,
-            crossAxisSpacing: 14,
-            childAspectRatio: 2.35,
+            crossAxisCount: 4,
+            mainAxisSpacing: 8,
+            crossAxisSpacing: 8,
+            childAspectRatio: 0.74,
           ),
-          itemCount: categories.length,
+          itemCount: displayCategories.length,
           itemBuilder: (context, index) =>
-              _buildCategoryTile(categories[index], index),
+              _buildCategoryTile(displayCategories[index], index),
         );
       },
     );
@@ -716,62 +1035,51 @@ class _HomeScreenState extends State<HomeScreen> {
     return GestureDetector(
       onTap: () => setState(() => _selectedCategory = category),
       child: Container(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.fromLTRB(6, 9, 6, 8),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppTheme.textMuted.withValues(alpha: 0.14)),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: const Color(0xFFE8ECF4)),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 12,
-              offset: const Offset(0, 5),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
-        child: Row(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              width: 38,
-              height: 38,
-              decoration: BoxDecoration(
-                color: color,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(icon, color: iconColor, size: 24),
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+              child: Icon(icon, color: iconColor, size: 28),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(height: 7),
             Expanded(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    category.name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.outfit(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w800,
-                      color: AppTheme.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    '${category.services.length} services',
-                    style: GoogleFonts.inter(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: AppTheme.textSecondary,
-                    ),
-                  ),
-                ],
+              child: Text(
+                category.name,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: GoogleFonts.outfit(
+                  fontSize: 10.5,
+                  height: 1.05,
+                  fontWeight: FontWeight.w800,
+                  color: AppTheme.textPrimary,
+                ),
               ),
             ),
-            const Icon(
-              Icons.chevron_right_rounded,
-              color: AppTheme.textPrimary,
-              size: 22,
+            const SizedBox(height: 4),
+            Text(
+              '\u20B9 ${_categoryStartingPrice(category).toInt()}',
+              style: GoogleFonts.outfit(
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+                color: AppTheme.primary,
+              ),
             ),
           ],
         ),
@@ -1227,55 +1535,58 @@ class _HomeScreenState extends State<HomeScreen> {
         onTap: () =>
             Navigator.pushNamed(context, '/service-detail', arguments: service),
         child: Container(
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.fromLTRB(6, 9, 6, 8),
           decoration: BoxDecoration(
-            color: colors[index % colors.length],
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.8)),
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: const Color(0xFFE8ECF4)),
             boxShadow: [
               BoxShadow(
-                color: AppTheme.primary.withValues(alpha: 0.08),
-                blurRadius: 18,
-                offset: const Offset(0, 10),
+                color: Colors.black.withValues(alpha: 0.04),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
               ),
             ],
           ),
-          child: Stack(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Positioned(
-                right: 0,
-                bottom: -2,
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: colors[index % colors.length],
+                  shape: BoxShape.circle,
+                ),
                 child: Icon(
                   icons[index % icons.length],
-                  color: AppTheme.primary.withValues(alpha: 0.75),
-                  size: 42,
+                  color: AppTheme.primary,
+                  size: 28,
                 ),
               ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    service.name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.outfit(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w800,
-                      color: AppTheme.textPrimary,
-                    ),
+              const SizedBox(height: 7),
+              Expanded(
+                child: Text(
+                  service.name,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.outfit(
+                    fontSize: 10.5,
+                    height: 1.05,
+                    fontWeight: FontWeight.w800,
+                    color: AppTheme.textPrimary,
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    service.description,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.inter(
-                      fontSize: 13,
-                      height: 1.2,
-                      color: AppTheme.textSecondary,
-                    ),
-                  ),
-                ],
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                '\u20B9 ${service.basePrice.toInt()}',
+                style: GoogleFonts.outfit(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                  color: AppTheme.primary,
+                ),
               ),
             ],
           ),
@@ -1286,7 +1597,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildShimmerGrid() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Shimmer.fromColors(
         baseColor: AppTheme.surface,
         highlightColor: Colors.white,
@@ -1294,16 +1605,16 @@ class _HomeScreenState extends State<HomeScreen> {
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            mainAxisSpacing: 14,
-            crossAxisSpacing: 14,
-            childAspectRatio: 2.35,
+            crossAxisCount: 4,
+            mainAxisSpacing: 8,
+            crossAxisSpacing: 8,
+            childAspectRatio: 0.74,
           ),
-          itemCount: 6,
+          itemCount: 8,
           itemBuilder: (_, __) => Container(
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(18),
+              borderRadius: BorderRadius.circular(8),
             ),
           ),
         ),
@@ -1311,6 +1622,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  // ignore: unused_element
   Widget _buildBottomMessage() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -1595,6 +1907,122 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildReferenceBottomNav() {
+    return Container(
+      height: 64 + MediaQuery.of(context).padding.bottom,
+      padding: EdgeInsets.only(
+        left: 10,
+        right: 10,
+        top: 5,
+        bottom: MediaQuery.of(context).padding.bottom,
+      ),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border(
+          top: BorderSide(color: AppTheme.textMuted.withValues(alpha: 0.18)),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 12,
+            offset: const Offset(0, -4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          _referenceNavItem(
+            icon: Icons.home_rounded,
+            label: 'Home',
+            selected: _currentIndex == 0,
+            onTap: () => setState(() => _currentIndex = 0),
+          ),
+          _referenceNavItem(
+            icon: Icons.receipt_long_rounded,
+            label: 'Bookings',
+            selected: false,
+            onTap: () => Navigator.pushNamed(context, '/bookings'),
+          ),
+          Expanded(
+            child: Center(
+              child: GestureDetector(
+                onTap: () => setState(() => _currentIndex = 1),
+                child: Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    gradient: AppTheme.primaryGradient,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppTheme.primary.withValues(alpha: 0.30),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: const Icon(
+                    Icons.add_rounded,
+                    color: Colors.white,
+                    size: 30,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          _referenceNavItem(
+            icon: Icons.monitor_heart_outlined,
+            label: 'Activity',
+            selected: false,
+            onTap: () => Navigator.pushNamed(context, '/bookings'),
+          ),
+          _referenceNavItem(
+            icon: Icons.person_outline_rounded,
+            label: 'Profile',
+            selected: _currentIndex == 3,
+            onTap: () => setState(() => _currentIndex = 3),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _referenceNavItem({
+    required IconData icon,
+    required String label,
+    required bool selected,
+    required VoidCallback onTap,
+  }) {
+    final color = selected ? AppTheme.primary : AppTheme.textMuted;
+
+    return Expanded(
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: SizedBox(
+          height: 54,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, color: color, size: 22),
+              const SizedBox(height: 2),
+              Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.inter(
+                  fontSize: 9,
+                  fontWeight: selected ? FontWeight.w900 : FontWeight.w700,
+                  color: color,
+                ),
+              ),
+            ],
           ),
         ),
       ),
