@@ -186,8 +186,9 @@ class _ServiceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final halfDay = service.basePrice.toInt();
-    final fullDay = (service.basePrice * 16 / 9).round();
+    final monthBase = service.monthBasePrice ?? service.basePrice;
+    final halfDay = monthBase.toInt();
+    final fullDay = (monthBase * 2).round();
 
     return Container(
       decoration: BoxDecoration(

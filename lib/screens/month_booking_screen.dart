@@ -20,9 +20,9 @@ class _MonthBookingScreenState extends State<MonthBookingScreen> {
   // Price calculation helpers
   int get _durationHours => _durationType == 'HALF_DAY' ? 9 : 16;
 
-  double _dailyPrice(double basePrice) {
-    if (_durationType == 'HALF_DAY') return basePrice;
-    return (basePrice * 16 / 9).roundToDouble();
+  double _dailyPrice(double monthBasePrice) {
+    if (_durationType == 'HALF_DAY') return monthBasePrice;
+    return (monthBasePrice * 2).roundToDouble();
   }
 
   int _workingDays(DateTime start) {
@@ -89,7 +89,7 @@ class _MonthBookingScreenState extends State<MonthBookingScreen> {
   Widget build(BuildContext context) {
     final service = ModalRoute.of(context)!.settings.arguments as Service;
     final days = _workingDays(_selectedMonth);
-    final daily = _dailyPrice(service.basePrice);
+    final daily = _dailyPrice(service.monthBasePrice ?? service.basePrice);
     final total = daily * days;
 
     return Scaffold(
@@ -166,7 +166,7 @@ class _MonthBookingScreenState extends State<MonthBookingScreen> {
                                           fontSize: 16,
                                           fontWeight: FontWeight.w800,
                                           color: AppTheme.textPrimary)),
-                                  Text('Base rate ₹${service.basePrice.toInt()} / half-day',
+                                  Text('Base rate ₹${(service.monthBasePrice ?? service.basePrice).toInt()} / half-day',
                                       style: GoogleFonts.inter(
                                           fontSize: 13,
                                           color: AppTheme.textSecondary)),

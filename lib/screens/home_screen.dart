@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:latlong2/latlong.dart' hide Path;
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
 import '../config/theme.dart';
@@ -1296,27 +1298,48 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildCategoryServices(Category category) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Gradient header
+        Container(
+          width: double.infinity,
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF075FF4), Color(0xFF0043D1)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.vertical(bottom: Radius.circular(22)),
+          ),
+          padding: EdgeInsets.fromLTRB(
+            16,
+            MediaQuery.of(context).padding.top + 12,
+            16,
+            22,
+          ),
+          child: Row(
             children: [
-              Material(
-                color: Colors.white.withValues(alpha: 0.82),
-                borderRadius: BorderRadius.circular(16),
-                child: InkWell(
-                  onTap: () => setState(() => _selectedCategory = null),
-                  borderRadius: BorderRadius.circular(16),
-                  child: const SizedBox(
-                    width: 44,
-                    height: 44,
-                    child: Icon(Icons.arrow_back_rounded),
+              GestureDetector(
+                onTap: () => setState(() => _selectedCategory = null),
+                child: Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.18),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.28),
+                    ),
+                  ),
+                  child: const Icon(
+                    Icons.arrow_back_rounded,
+                    color: Colors.white,
+                    size: 20,
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1324,18 +1347,19 @@ class _HomeScreenState extends State<HomeScreen> {
                     Text(
                       '${category.name} ${_getCategoryEmoji(category.name)}',
                       style: GoogleFonts.outfit(
-                        fontSize: 24,
+                        fontSize: 22,
                         fontWeight: FontWeight.w800,
-                        color: AppTheme.textPrimary,
+                        color: Colors.white,
                       ),
                     ),
+                    const SizedBox(height: 2),
                     Text(
                       category.description,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: GoogleFonts.inter(
                         fontSize: 13,
-                        color: AppTheme.textMuted,
+                        color: Colors.white.withValues(alpha: 0.80),
                       ),
                     ),
                   ],
@@ -1343,131 +1367,175 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          _buildCategoryMapPreview(category),
-          const SizedBox(height: 16),
-          ...category.services.asMap().entries.map(
-            (entry) =>
-                _buildServiceListCard(entry.value, entry.key, category.name),
+        ),
+        const SizedBox(height: 16),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildCategoryMapPreview(category),
+              const SizedBox(height: 16),
+              ...category.services.asMap().entries.map(
+                (entry) => _buildServiceListCard(
+                  entry.value,
+                  entry.key,
+                  category.name,
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
   Widget _buildCategoryMapPreview(Category category) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.pushNamed(context, '/nearby-workers', arguments: category);
-      },
-      child: Container(
-        height: 190,
-        clipBehavior: Clip.antiAlias,
-        decoration: BoxDecoration(
-          color: const Color(0xFFE9EEF8),
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: Colors.white, width: 3),
-          boxShadow: [
-            BoxShadow(
-              color: AppTheme.primary.withValues(alpha: 0.12),
-              blurRadius: 24,
-              offset: const Offset(0, 12),
-            ),
-          ],
-        ),
-        child: Stack(
-          children: [
-            Positioned.fill(child: CustomPaint(painter: _MapPreviewPainter())),
-            Positioned(
-              left: 16,
-              top: 16,
-              child: _mapChip(
-                icon: Icons.location_on_rounded,
-                label: 'Your area',
-                color: AppTheme.primary,
-              ),
-            ),
-            Positioned(
-              right: 16,
-              top: 16,
-              child: _mapChip(
-                icon: Icons.circle,
-                label: '${category.services.length} Pros nearby',
-                color: AppTheme.success,
-              ),
-            ),
-            Center(
-              child: Container(
-                width: 46,
-                height: 46,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white,
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppTheme.primary.withValues(alpha: 0.25),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
+    return Consumer<AddressProvider>(
+      builder: (context, ap, _) {
+        final coords = ap.selectedAddress?.coordinates;
+        // GeoJSON: [lng, lat]
+        final center = (coords != null && coords.length >= 2)
+            ? LatLng(coords[1], coords[0])
+            : const LatLng(22.5726, 88.3639); // fallback: Kolkata
+
+        return GestureDetector(
+          onTap: () =>
+              Navigator.pushNamed(context, '/nearby-workers', arguments: category),
+          child: Container(
+            height: 200,
+            clipBehavior: Clip.antiAlias,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Colors.white, width: 3),
+              boxShadow: [
+                BoxShadow(
+                  color: AppTheme.primary.withValues(alpha: 0.14),
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
                 ),
-                child: Center(
-                  child: Transform.rotate(
-                    angle: -3.14159 / 4, // Point Northeast
-                    child: const Icon(
-                      Icons.navigation_rounded,
-                      color: AppTheme.primary,
-                      size: 24,
+              ],
+            ),
+            child: Stack(
+              children: [
+                // Live map (non-interactive)
+                Positioned.fill(
+                  child: FlutterMap(
+                    options: MapOptions(
+                      initialCenter: center,
+                      initialZoom: 14.0,
+                      interactionOptions: const InteractionOptions(
+                        flags: InteractiveFlag.none,
+                      ),
+                    ),
+                    children: [
+                      TileLayer(
+                        urlTemplate:
+                            'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                        userAgentPackageName: 'com.example.customer_app',
+                      ),
+                      MarkerLayer(
+                        markers: [
+                          Marker(
+                            point: center,
+                            width: 46,
+                            height: 46,
+                            child: Container(
+                              width: 46,
+                              height: 46,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Colors.white,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: AppTheme.primary.withValues(alpha: 0.30),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 3),
+                                  ),
+                                ],
+                              ),
+                              child: Center(
+                                child: Transform.rotate(
+                                  angle: -3.14159 / 4,
+                                  child: const Icon(
+                                    Icons.navigation_rounded,
+                                    color: AppTheme.primary,
+                                    size: 24,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                // Top chips
+                Positioned(
+                  left: 12,
+                  top: 12,
+                  child: _mapChip(
+                    icon: Icons.location_on_rounded,
+                    label: 'Your area',
+                    color: AppTheme.primary,
+                  ),
+                ),
+                Positioned(
+                  right: 12,
+                  top: 12,
+                  child: _mapChip(
+                    icon: Icons.circle,
+                    label: '${category.services.length} Pros nearby',
+                    color: AppTheme.success,
+                  ),
+                ),
+                // View Live Map button
+                Positioned(
+                  bottom: 12,
+                  right: 12,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      gradient: AppTheme.primaryGradient,
+                      borderRadius: BorderRadius.circular(14),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppTheme.primary.withValues(alpha: 0.35),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.map_rounded,
+                          color: Colors.white,
+                          size: 15,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          'View Live Map',
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
-              ),
+              ],
             ),
-            Positioned(left: 34, bottom: 28, child: _workerPin('2 mins')),
-            Positioned(right: 34, bottom: 42, child: _workerPin('4 mins')),
-            Positioned(
-              bottom: 12,
-              right: 12,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: AppTheme.primary,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppTheme.primary.withValues(alpha: 0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.map_rounded,
-                      color: Colors.white,
-                      size: 14,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      'View Live Map',
-                      style: GoogleFonts.inter(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w800,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
@@ -1504,57 +1572,6 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _workerPin(String eta) {
-    return Column(
-      children: [
-        Container(
-          width: 42,
-          height: 42,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: AppTheme.success,
-            border: Border.all(color: Colors.white, width: 4),
-            boxShadow: [
-              BoxShadow(
-                color: AppTheme.success.withValues(alpha: 0.25),
-                blurRadius: 8,
-                offset: const Offset(0, 3),
-              ),
-            ],
-          ),
-          child: const Icon(
-            Icons.person_rounded,
-            color: Colors.white,
-            size: 22,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 4,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Text(
-            eta,
-            style: GoogleFonts.inter(
-              fontSize: 11,
-              fontWeight: FontWeight.w800,
-              color: AppTheme.textPrimary,
-            ),
-          ),
-        ),
-      ],
     );
   }
 
@@ -2254,61 +2271,3 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-class _MapPreviewPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final land = Paint()..color = const Color(0xFFE9EEF8);
-    final water = Paint()
-      ..color = const Color(0xFFCFE4F6)
-      ..style = PaintingStyle.fill;
-    final road = Paint()
-      ..color = Colors.white.withValues(alpha: 0.95)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 12
-      ..strokeCap = StrokeCap.round;
-    final smallRoad = Paint()
-      ..color = const Color(0xFFB9C9E5)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 3
-      ..strokeCap = StrokeCap.round;
-
-    canvas.drawRect(Offset.zero & size, land);
-    canvas.drawOval(
-      Rect.fromLTWH(
-        size.width * 0.12,
-        size.height * 0.18,
-        size.width * 0.34,
-        size.height * 0.22,
-      ),
-      water,
-    );
-    canvas.drawLine(
-      Offset(-20, size.height * 0.28),
-      Offset(size.width + 20, size.height * 0.74),
-      road,
-    );
-    canvas.drawLine(
-      Offset(size.width * 0.20, -20),
-      Offset(size.width * 0.72, size.height + 20),
-      road,
-    );
-    canvas.drawLine(
-      Offset(-10, size.height * 0.70),
-      Offset(size.width * 0.86, size.height * 0.10),
-      smallRoad,
-    );
-    canvas.drawLine(
-      Offset(size.width * 0.05, size.height * 0.48),
-      Offset(size.width, size.height * 0.34),
-      smallRoad,
-    );
-    canvas.drawLine(
-      Offset(size.width * 0.62, -10),
-      Offset(size.width * 0.90, size.height + 10),
-      smallRoad,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}

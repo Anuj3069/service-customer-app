@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:latlong2/latlong.dart' hide Path;
 import 'package:provider/provider.dart';
 import '../config/theme.dart';
 import '../models/booking.dart';
@@ -22,6 +24,7 @@ class _InstantBookingScreenState extends State<InstantBookingScreen>
   late AnimationController _pulseController;
   late AnimationController _rotateController;
   late Animation<double> _pulseAnimation;
+  final MapController _mapController = MapController();
 
   Timer? _countdownTimer;
   Timer? _elapsedTimer;
@@ -395,7 +398,7 @@ class _InstantBookingScreenState extends State<InstantBookingScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildMatchingMap(booking),
+          _buildMatchingMap(booking, bp),
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 18, 20, 26),
             child: Column(
@@ -442,16 +445,56 @@ class _InstantBookingScreenState extends State<InstantBookingScreen>
     );
   }
 
-  Widget _buildMatchingMap(Booking? booking) {
+  Widget _buildMatchingMap(Booking? booking, BookingProvider bp) {
     final title = booking == null
         ? 'Select Service'
         : 'Select Service • ${booking.serviceName}';
+
+    // GeoJSON coordinates are [lng, lat]
+    LatLng customerLatLng = const LatLng(28.6139, 77.2090);
+    if (booking?.customerLocationCoordinates != null &&
+        booking!.customerLocationCoordinates!.length >= 2) {
+      customerLatLng = LatLng(
+        booking.customerLocationCoordinates![1],
+        booking.customerLocationCoordinates![0],
+      );
+    }
 
     return SizedBox(
       height: 340,
       child: Stack(
         children: [
-          Positioned.fill(child: CustomPaint(painter: _MatchingMapPainter())),
+          Positioned.fill(
+            child: FlutterMap(
+              mapController: _mapController,
+              options: MapOptions(
+                initialCenter: customerLatLng,
+                initialZoom: 14.5,
+                maxZoom: 18.0,
+                minZoom: 10.0,
+                interactionOptions: const InteractionOptions(
+                  flags: InteractiveFlag.none,
+                ),
+              ),
+              children: [
+                TileLayer(
+                  urlTemplate:
+                      'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  userAgentPackageName: 'com.example.customer_app',
+                ),
+                MarkerLayer(
+                  markers: [
+                    Marker(
+                      point: customerLatLng,
+                      width: 42,
+                      height: 42,
+                      child: _customerLocationDot(),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
           Positioned.fill(
             child: AnimatedBuilder(
               animation: _pulseAnimation,
@@ -480,7 +523,14 @@ class _InstantBookingScreenState extends State<InstantBookingScreen>
               child: Row(
                 children: [
                   IconButton(
-                    onPressed: () => Navigator.maybePop(context),
+                    onPressed: () {
+                      final status = bp.instantStatus;
+                      if (status == 'searching') {
+                        _cancelInstantBooking(bp);
+                      } else {
+                        Navigator.pop(context);
+                      }
+                    },
                     icon: const Icon(Icons.arrow_back_rounded),
                     color: AppTheme.textPrimary,
                   ),
@@ -503,15 +553,11 @@ class _InstantBookingScreenState extends State<InstantBookingScreen>
             ),
           ),
           Positioned(right: 14, top: 76, child: _prosOnlineBadge()),
-          Positioned(left: 36, top: 172, child: _workerEtaPin('2 mins', 'A')),
-          Positioned(right: 36, top: 180, child: _workerEtaPin('4 mins', 'R')),
           Positioned(
-            left: 0,
-            right: 0,
-            top: 172,
-            child: Center(child: _customerLocationDot()),
+            right: 16,
+            bottom: 18,
+            child: _mapLocateButton(customerLatLng),
           ),
-          Positioned(right: 16, bottom: 18, child: _mapLocateButton()),
         ],
       ),
     );
@@ -556,74 +602,6 @@ class _InstantBookingScreenState extends State<InstantBookingScreen>
     );
   }
 
-  Widget _workerEtaPin(String eta, String initial) {
-    return Column(
-      children: [
-        Container(
-          width: 54,
-          height: 54,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            shape: BoxShape.circle,
-            border: Border.all(color: AppTheme.success, width: 4),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.18),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Center(
-            child: Container(
-              width: 38,
-              height: 38,
-              decoration: const BoxDecoration(
-                gradient: AppTheme.primaryGradient,
-                shape: BoxShape.circle,
-              ),
-              child: Center(
-                child: Text(
-                  initial,
-                  style: GoogleFonts.outfit(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-        Transform.translate(
-          offset: const Offset(0, -4),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(8),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.10),
-                  blurRadius: 8,
-                  offset: const Offset(0, 3),
-                ),
-              ],
-            ),
-            child: Text(
-              eta,
-              style: GoogleFonts.inter(
-                fontSize: 12,
-                fontWeight: FontWeight.w800,
-                color: AppTheme.textPrimary,
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget _customerLocationDot() {
     return Container(
       width: 42,
@@ -653,22 +631,28 @@ class _InstantBookingScreenState extends State<InstantBookingScreen>
     );
   }
 
-  Widget _mapLocateButton() {
-    return Container(
-      width: 46,
-      height: 46,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.14),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
-          ),
-        ],
+  Widget _mapLocateButton(LatLng center) {
+    return GestureDetector(
+      onTap: () => _mapController.move(center, 14.5),
+      child: Container(
+        width: 46,
+        height: 46,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.14),
+              blurRadius: 10,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
+        child: const Icon(
+          Icons.my_location_rounded,
+          color: AppTheme.textPrimary,
+        ),
       ),
-      child: const Icon(Icons.my_location_rounded, color: AppTheme.textPrimary),
     );
   }
 
@@ -1105,90 +1089,6 @@ class _InstantBookingScreenState extends State<InstantBookingScreen>
       ),
     );
   }
-}
-
-class _MatchingMapPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final land = Paint()..color = const Color(0xFFEAF1EF);
-    final park = Paint()..color = const Color(0xFFDDEFE4);
-    final water = Paint()..color = const Color(0xFFD4EAF7);
-    final road = Paint()
-      ..color = Colors.white.withValues(alpha: 0.95)
-      ..strokeWidth = 12
-      ..strokeCap = StrokeCap.round
-      ..style = PaintingStyle.stroke;
-    final minorRoad = Paint()
-      ..color = const Color(0xFFB9C9D2).withValues(alpha: 0.55)
-      ..strokeWidth = 2
-      ..strokeCap = StrokeCap.round
-      ..style = PaintingStyle.stroke;
-
-    canvas.drawRect(Offset.zero & size, land);
-    canvas.drawOval(
-      Rect.fromLTWH(size.width * 0.08, 82, size.width * 0.34, 62),
-      park,
-    );
-    canvas.drawOval(
-      Rect.fromLTWH(size.width * 0.55, 104, size.width * 0.32, 76),
-      water,
-    );
-
-    final roads = [
-      [
-        Offset(-24, 118),
-        Offset(size.width * 0.35, 150),
-        Offset(size.width + 24, 112),
-      ],
-      [
-        Offset(18, 280),
-        Offset(size.width * 0.46, 206),
-        Offset(size.width + 18, 238),
-      ],
-      [
-        Offset(size.width * 0.2, 54),
-        Offset(size.width * 0.32, 198),
-        Offset(size.width * 0.42, 340),
-      ],
-      [
-        Offset(size.width * 0.76, 54),
-        Offset(size.width * 0.66, 200),
-        Offset(size.width * 0.58, 340),
-      ],
-    ];
-
-    for (final roadPoints in roads) {
-      final path = Path()..moveTo(roadPoints[0].dx, roadPoints[0].dy);
-      path.quadraticBezierTo(
-        roadPoints[1].dx,
-        roadPoints[1].dy,
-        roadPoints[2].dx,
-        roadPoints[2].dy,
-      );
-      canvas.drawPath(path, road);
-    }
-
-    for (var i = 0; i < 8; i++) {
-      final y = 76.0 + (i * 31);
-      canvas.drawLine(
-        Offset(0, y),
-        Offset(size.width, y + (i.isEven ? 20 : -18)),
-        minorRoad,
-      );
-    }
-
-    for (var i = 0; i < 7; i++) {
-      final x = 22.0 + (i * 58);
-      canvas.drawLine(
-        Offset(x, 54),
-        Offset(x + (i.isEven ? 22 : -16), size.height),
-        minorRoad,
-      );
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 class _MatchingPulsePainter extends CustomPainter {

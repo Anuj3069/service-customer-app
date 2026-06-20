@@ -41,6 +41,7 @@ class Service {
   final String name;
   final String description;
   final double basePrice;
+  final double? monthBasePrice;
   final int duration;
   final List<String> requiredSkills;
   final String? categoryId;
@@ -53,6 +54,7 @@ class Service {
     required this.name,
     required this.description,
     required this.basePrice,
+    this.monthBasePrice,
     required this.duration,
     required this.requiredSkills,
     this.categoryId,
@@ -77,6 +79,7 @@ class Service {
       name: json['name'] ?? '',
       description: json['description'] ?? '',
       basePrice: (json['basePrice'] ?? 0).toDouble(),
+      monthBasePrice: json['monthBasePrice'] != null ? (json['monthBasePrice']).toDouble() : null,
       duration: json['duration'] ?? 0,
       requiredSkills: List<String>.from(json['requiredSkills'] ?? []),
       categoryId: json['category'] is String ? json['category'] : cat?.id,
