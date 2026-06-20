@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../config/theme.dart';
+import '../models/booking.dart';
 import '../providers/booking_provider.dart';
 import '../utils/cancellation_reason_helper.dart';
 import '../widgets/gradient_button.dart';
@@ -23,7 +24,9 @@ class _InstantBookingScreenState extends State<InstantBookingScreen>
   late Animation<double> _pulseAnimation;
 
   Timer? _countdownTimer;
+  Timer? _elapsedTimer;
   int _secondsRemaining = 300; // Default 5 minutes, synced with Redis TTL
+  int _elapsedSeconds = 0;
   bool _canceling = false;
 
   @override
@@ -68,6 +71,10 @@ class _InstantBookingScreenState extends State<InstantBookingScreen>
       }
     });
 
+    _elapsedTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) setState(() => _elapsedSeconds++);
+    });
+
     // Listen for tracking to auto-navigate to live tracking screen
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final bp = context.read<BookingProvider>();
@@ -97,12 +104,19 @@ class _InstantBookingScreenState extends State<InstantBookingScreen>
     _pulseController.dispose();
     _rotateController.dispose();
     _countdownTimer?.cancel();
+    _elapsedTimer?.cancel();
     super.dispose();
   }
 
   String get _formattedTime {
     final min = _secondsRemaining ~/ 60;
     final sec = _secondsRemaining % 60;
+    return '${min.toString().padLeft(2, '0')}:${sec.toString().padLeft(2, '0')}';
+  }
+
+  String get _elapsedTime {
+    final min = _elapsedSeconds ~/ 60;
+    final sec = _elapsedSeconds % 60;
     return '${min.toString().padLeft(2, '0')}:${sec.toString().padLeft(2, '0')}';
   }
 
@@ -180,11 +194,12 @@ class _InstantBookingScreenState extends State<InstantBookingScreen>
         });
         return _buildConfirmedView(bp);
       default:
-        return _buildSearchingView(bp);
+        return _buildLiveMatchingView(bp);
     }
   }
 
   // ── Searching View ──────────────────────────────────
+  // ignore: unused_element
   Widget _buildSearchingView(BookingProvider bp) {
     final booking = bp.instantBooking;
     return Padding(
@@ -372,6 +387,483 @@ class _InstantBookingScreenState extends State<InstantBookingScreen>
   }
 
   // ── Confirmed View ──────────────────────────────────
+  Widget _buildLiveMatchingView(BookingProvider bp) {
+    final booking = bp.instantBooking;
+
+    return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildMatchingMap(booking),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 18, 20, 26),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Text(
+                    'Finding nearby professional...',
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.outfit(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w800,
+                      color: AppTheme.textPrimary,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Center(child: _buildElapsedTimer()),
+                const SizedBox(height: 18),
+                if (booking != null) _buildCurrentBookingCard(booking),
+                const SizedBox(height: 18),
+                _buildMatchingSteps(bp),
+                const SizedBox(height: 18),
+                _buildExpiryStrip(),
+                const SizedBox(height: 18),
+                GradientButton(
+                  text: 'Cancel Request',
+                  icon: Icons.cancel_rounded,
+                  isLoading: _canceling,
+                  gradient: const LinearGradient(
+                    colors: [AppTheme.error, Color(0xFFC62828)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  onPressed: booking == null || _canceling
+                      ? null
+                      : () => _cancelInstantBooking(bp),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMatchingMap(Booking? booking) {
+    final title = booking == null
+        ? 'Select Service'
+        : 'Select Service • ${booking.serviceName}';
+
+    return SizedBox(
+      height: 340,
+      child: Stack(
+        children: [
+          Positioned.fill(child: CustomPaint(painter: _MatchingMapPainter())),
+          Positioned.fill(
+            child: AnimatedBuilder(
+              animation: _pulseAnimation,
+              builder: (context, _) => CustomPaint(
+                painter: _MatchingPulsePainter(_pulseAnimation.value),
+              ),
+            ),
+          ),
+          Positioned(
+            left: 0,
+            right: 0,
+            top: 0,
+            child: Container(
+              height: 54,
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.94),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.06),
+                    blurRadius: 14,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  IconButton(
+                    onPressed: () => Navigator.maybePop(context),
+                    icon: const Icon(Icons.arrow_back_rounded),
+                    color: AppTheme.textPrimary,
+                  ),
+                  Expanded(
+                    child: Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.outfit(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: AppTheme.textPrimary,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 48),
+                ],
+              ),
+            ),
+          ),
+          Positioned(right: 14, top: 76, child: _prosOnlineBadge()),
+          Positioned(left: 36, top: 172, child: _workerEtaPin('2 mins', 'A')),
+          Positioned(right: 36, top: 180, child: _workerEtaPin('4 mins', 'R')),
+          Positioned(
+            left: 0,
+            right: 0,
+            top: 172,
+            child: Center(child: _customerLocationDot()),
+          ),
+          Positioned(right: 16, bottom: 18, child: _mapLocateButton()),
+        ],
+      ),
+    );
+  }
+
+  Widget _prosOnlineBadge() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.12),
+            blurRadius: 12,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 9,
+            height: 9,
+            decoration: const BoxDecoration(
+              color: AppTheme.success,
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            'Nearby Pros',
+            style: GoogleFonts.inter(
+              fontSize: 13,
+              fontWeight: FontWeight.w800,
+              color: AppTheme.textPrimary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _workerEtaPin(String eta, String initial) {
+    return Column(
+      children: [
+        Container(
+          width: 54,
+          height: 54,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            shape: BoxShape.circle,
+            border: Border.all(color: AppTheme.success, width: 4),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.18),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Center(
+            child: Container(
+              width: 38,
+              height: 38,
+              decoration: const BoxDecoration(
+                gradient: AppTheme.primaryGradient,
+                shape: BoxShape.circle,
+              ),
+              child: Center(
+                child: Text(
+                  initial,
+                  style: GoogleFonts.outfit(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+        Transform.translate(
+          offset: const Offset(0, -4),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.10),
+                  blurRadius: 8,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: Text(
+              eta,
+              style: GoogleFonts.inter(
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+                color: AppTheme.textPrimary,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _customerLocationDot() {
+    return Container(
+      width: 42,
+      height: 42,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        shape: BoxShape.circle,
+        border: Border.all(color: const Color(0xFF4AA9F7), width: 4),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.primary.withValues(alpha: 0.24),
+            blurRadius: 14,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Center(
+        child: Container(
+          width: 20,
+          height: 20,
+          decoration: const BoxDecoration(
+            color: AppTheme.primary,
+            shape: BoxShape.circle,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _mapLocateButton() {
+    return Container(
+      width: 46,
+      height: 46,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.14),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: const Icon(Icons.my_location_rounded, color: AppTheme.textPrimary),
+    );
+  }
+
+  Widget _buildElapsedTimer() {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        AnimatedBuilder(
+          animation: _pulseController,
+          builder: (context, _) {
+            return Container(
+              width: 18,
+              height: 18,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: AppTheme.textMuted.withValues(
+                    alpha: 0.45 + (_pulseController.value * 0.35),
+                  ),
+                  width: 2,
+                ),
+              ),
+            );
+          },
+        ),
+        const SizedBox(width: 8),
+        Text(
+          '$_elapsedTime sec',
+          style: GoogleFonts.outfit(
+            fontSize: 21,
+            fontWeight: FontWeight.w800,
+            color: AppTheme.textPrimary,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCurrentBookingCard(Booking booking) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFEFF3F4),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: const BoxDecoration(
+              color: AppTheme.success,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.home_repair_service_rounded,
+              color: Colors.white,
+              size: 19,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  booking.serviceName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.outfit(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                    color: AppTheme.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '${booking.customerLocationDisplay} • Rs ${booking.price.toInt()}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          const Icon(Icons.chevron_right_rounded, color: AppTheme.textPrimary),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMatchingSteps(BookingProvider bp) {
+    return Column(
+      children: [
+        _matchingStep(
+          icon: Icons.travel_explore_rounded,
+          label: 'Matching Nearby Pros',
+          active: true,
+          done: true,
+        ),
+        _matchingStep(
+          icon: Icons.notifications_active_rounded,
+          label: bp.isSocketConnected
+              ? 'Sending Push Requests'
+              : 'Reconnecting Push Requests',
+          active: true,
+          done: bp.isSocketConnected,
+        ),
+        _matchingStep(
+          icon: Icons.assignment_turned_in_rounded,
+          label: 'First Accepts Gets Job',
+          active: false,
+          done: false,
+        ),
+      ],
+    );
+  }
+
+  Widget _matchingStep({
+    required IconData icon,
+    required String label,
+    required bool active,
+    required bool done,
+  }) {
+    final color = done || active ? AppTheme.success : AppTheme.textMuted;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 15),
+      child: Row(
+        children: [
+          Container(
+            width: 33,
+            height: 33,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: done || active ? 1 : 0.20),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              done ? Icons.check_rounded : icon,
+              color: done || active ? Colors.white : AppTheme.textMuted,
+              size: 18,
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Text(
+              label,
+              style: GoogleFonts.inter(
+                fontSize: 17,
+                fontWeight: FontWeight.w600,
+                color: active || done
+                    ? AppTheme.textPrimary
+                    : AppTheme.textMuted,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildExpiryStrip() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+      decoration: BoxDecoration(
+        color: AppTheme.warning.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppTheme.warning.withValues(alpha: 0.26)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.timer_rounded, color: AppTheme.warning, size: 19),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'Live matching until confirmed • Expires in $_formattedTime',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.inter(
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+                color: AppTheme.warning,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildConfirmedView(BookingProvider bp) {
     final provider = bp.confirmedProvider;
     return Padding(
@@ -612,5 +1104,120 @@ class _InstantBookingScreenState extends State<InstantBookingScreen>
         ],
       ),
     );
+  }
+}
+
+class _MatchingMapPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final land = Paint()..color = const Color(0xFFEAF1EF);
+    final park = Paint()..color = const Color(0xFFDDEFE4);
+    final water = Paint()..color = const Color(0xFFD4EAF7);
+    final road = Paint()
+      ..color = Colors.white.withValues(alpha: 0.95)
+      ..strokeWidth = 12
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.stroke;
+    final minorRoad = Paint()
+      ..color = const Color(0xFFB9C9D2).withValues(alpha: 0.55)
+      ..strokeWidth = 2
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.stroke;
+
+    canvas.drawRect(Offset.zero & size, land);
+    canvas.drawOval(
+      Rect.fromLTWH(size.width * 0.08, 82, size.width * 0.34, 62),
+      park,
+    );
+    canvas.drawOval(
+      Rect.fromLTWH(size.width * 0.55, 104, size.width * 0.32, 76),
+      water,
+    );
+
+    final roads = [
+      [
+        Offset(-24, 118),
+        Offset(size.width * 0.35, 150),
+        Offset(size.width + 24, 112),
+      ],
+      [
+        Offset(18, 280),
+        Offset(size.width * 0.46, 206),
+        Offset(size.width + 18, 238),
+      ],
+      [
+        Offset(size.width * 0.2, 54),
+        Offset(size.width * 0.32, 198),
+        Offset(size.width * 0.42, 340),
+      ],
+      [
+        Offset(size.width * 0.76, 54),
+        Offset(size.width * 0.66, 200),
+        Offset(size.width * 0.58, 340),
+      ],
+    ];
+
+    for (final roadPoints in roads) {
+      final path = Path()..moveTo(roadPoints[0].dx, roadPoints[0].dy);
+      path.quadraticBezierTo(
+        roadPoints[1].dx,
+        roadPoints[1].dy,
+        roadPoints[2].dx,
+        roadPoints[2].dy,
+      );
+      canvas.drawPath(path, road);
+    }
+
+    for (var i = 0; i < 8; i++) {
+      final y = 76.0 + (i * 31);
+      canvas.drawLine(
+        Offset(0, y),
+        Offset(size.width, y + (i.isEven ? 20 : -18)),
+        minorRoad,
+      );
+    }
+
+    for (var i = 0; i < 7; i++) {
+      final x = 22.0 + (i * 58);
+      canvas.drawLine(
+        Offset(x, 54),
+        Offset(x + (i.isEven ? 22 : -16), size.height),
+        minorRoad,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+class _MatchingPulsePainter extends CustomPainter {
+  final double pulse;
+
+  _MatchingPulsePainter(this.pulse);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, 193);
+    final fill = Paint()
+      ..color = AppTheme.primary.withValues(alpha: 0.16)
+      ..style = PaintingStyle.fill;
+    final ring = Paint()
+      ..color = Colors.white.withValues(alpha: 0.88)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 4;
+    final outerRing = Paint()
+      ..color = Colors.white.withValues(alpha: 0.72)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3;
+
+    canvas.drawCircle(center, 104 * pulse, fill);
+    canvas.drawCircle(center, 72 * pulse, ring);
+    canvas.drawCircle(center, 118 * pulse, outerRing);
+  }
+
+  @override
+  bool shouldRepaint(covariant _MatchingPulsePainter oldDelegate) {
+    return oldDelegate.pulse != pulse;
   }
 }
