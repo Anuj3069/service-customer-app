@@ -88,6 +88,50 @@ class BookingApiService {
     return Booking.fromJson(data);
   }
 
+  /// Create a month-long booking contract (HALF_DAY or FULL_DAY)
+  Future<Map<String, dynamic>> createMonthBooking({
+    required String providerId,
+    required String serviceId,
+    required String durationType,
+    required String monthStartDate,
+    Map<String, dynamic>? customerLocation,
+  }) async {
+    final response = await ApiClient.post(ApiConfig.monthBooking, {
+      'providerId': providerId,
+      'serviceId': serviceId,
+      'durationType': durationType,
+      'monthStartDate': monthStartDate,
+      if (customerLocation != null) 'customerLocation': customerLocation,
+    });
+    return response['data'] as Map<String, dynamic>;
+  }
+
+  /// Get the daily schedule (child bookings) for a month contract
+  Future<List<Booking>> getMonthBookingSchedule(String masterId) async {
+    final response = await ApiClient.get(ApiConfig.bookingSchedule(masterId));
+    final data = response['data'];
+    if (data['children'] != null) {
+      return (data['children'] as List).map((j) => Booking.fromJson(j)).toList();
+    }
+    return [];
+  }
+
+  /// Cancel a booking; pass scope='ALL' to cancel the whole month contract
+  Future<Booking> cancelBookingWithScope(
+    String id, {
+    String? cancellationReason,
+    String scope = 'THIS',
+  }) async {
+    final response = await ApiClient.put(ApiConfig.cancelBooking(id), {
+      if (cancellationReason != null && cancellationReason.trim().isNotEmpty)
+        'cancellationReason': cancellationReason.trim(),
+      'cancellationScope': scope,
+    });
+    final data = response['data'];
+    if (data['booking'] != null) return Booking.fromJson(data['booking']);
+    return Booking.fromJson(data);
+  }
+
   /// Get the completion OTP for an accepted booking (customer-only)
   Future<String> getCompletionOtp(String bookingId) async {
     final response = await ApiClient.get(ApiConfig.bookingOtp(bookingId));

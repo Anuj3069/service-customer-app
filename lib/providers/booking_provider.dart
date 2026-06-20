@@ -358,6 +358,50 @@ class BookingProvider extends ChangeNotifier {
     }
   }
 
+  /// ── Month Booking ────────────────────────────────────
+  /// Finds the best available provider for the service and creates the
+  /// month-long booking contract in one step.
+  Future<bool> createMonthBooking({
+    required String serviceId,
+    required String durationType,
+    required DateTime monthStart,
+    Map<String, dynamic>? customerLocation,
+  }) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      // Find the first Mon–Sat of the month to use as match anchor date
+      DateTime anchor = monthStart;
+      while (anchor.weekday == DateTime.sunday) {
+        anchor = anchor.add(const Duration(days: 1));
+      }
+
+      final matched = await _matchApi.findMatch(
+        serviceId: serviceId,
+        date: anchor.toIso8601String(),
+        slot: '09:00-18:00',
+      );
+
+      await _bookingApi.createMonthBooking(
+        providerId: matched.provider.id,
+        serviceId: serviceId,
+        durationType: durationType,
+        monthStartDate: monthStart.toIso8601String(),
+        customerLocation: customerLocation,
+      );
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _error = e.toString().replaceFirst('Exception: ', '');
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
   /// Reset instant booking state
   void resetInstantBooking() {
     _instantBooking = null;

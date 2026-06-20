@@ -26,6 +26,10 @@ class ApiConfig {
   // Instant Booking
   static const String instantBooking = '/user/instant-booking';
 
+  // Month Booking
+  static const String monthBooking = '/user/month-booking';
+  static String bookingSchedule(String id) => '/user/bookings/$id/schedule';
+
   // Reviews
   static const String reviews = '/user/reviews';
 

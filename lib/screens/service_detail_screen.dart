@@ -16,7 +16,8 @@ class ServiceDetailScreen extends StatefulWidget {
 }
 
 class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
-  bool _bookNow = true;
+  // 0 = Book Now, 1 = Book Later, 2 = Book for Month
+  int _bookMode = 0;
   DateTime? _selectedDate;
   String? _selectedSlot;
 
@@ -175,10 +176,10 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
                       ),
                       const SizedBox(height: 24),
 
-                      _bookModeSelector(),
+                      _bookModeSelector(service),
                       const SizedBox(height: 24),
 
-                      if (_bookNow) ...[
+                      if (_bookMode == 0) ...[
                         _nowArrivalCard(service),
                         const SizedBox(height: 24),
                         _buildTrustRow(
@@ -200,7 +201,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
                         const SizedBox(height: 28),
                       ],
 
-                      if (!_bookNow) ...[
+                      if (_bookMode == 1) ...[
                         Text(
                           'Select Date',
                           style: GoogleFonts.outfit(
@@ -637,10 +638,10 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
                         },
                       ),
 
-                      // Sleek Booking Buttons
+                      // Booking action button
                       Consumer<BookingProvider>(
                         builder: (context, bookingProvider, _) {
-                          if (_bookNow) {
+                          if (_bookMode == 0) {
                             return GestureDetector(
                               onTap: bookingProvider.isLoading
                                   ? null
@@ -711,14 +712,52 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
                                       ),
                               ),
                             );
+                          } else if (_bookMode == 2) {
+                            return GestureDetector(
+                              onTap: () => Navigator.pushNamed(
+                                context,
+                                '/month-booking',
+                                arguments: service,
+                              ),
+                              child: Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.symmetric(vertical: 18),
+                                decoration: BoxDecoration(
+                                  gradient: AppTheme.primaryGradient,
+                                  borderRadius: BorderRadius.circular(22),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: AppTheme.primary.withValues(alpha: 0.3),
+                                      blurRadius: 16,
+                                      offset: const Offset(0, 8),
+                                    ),
+                                  ],
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    const Icon(Icons.calendar_month_rounded,
+                                        color: Colors.white, size: 24),
+                                    const SizedBox(width: 12),
+                                    Text(
+                                      'Set Up Month Booking',
+                                      style: GoogleFonts.outfit(
+                                        fontSize: 17,
+                                        fontWeight: FontWeight.w800,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
                           } else {
                             return GradientButton(
                               text: 'Confirm Slot',
                               icon: Icons.check_circle_outline_rounded,
                               isLoading: bookingProvider.isLoading,
                               onPressed:
-                                  (_selectedDate != null &&
-                                      _selectedSlot != null)
+                                  (_selectedDate != null && _selectedSlot != null)
                                   ? () => _createDirectBooking(service)
                                   : null,
                             );
@@ -737,7 +776,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
     );
   }
 
-  Widget _bookModeSelector() {
+  Widget _bookModeSelector(Service service) {
     return Container(
       height: 62,
       padding: const EdgeInsets.all(5),
@@ -759,18 +798,27 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
             child: _modeButton(
               icon: Icons.flash_on_rounded,
               label: 'Book Now',
-              selected: _bookNow,
-              onTap: () => setState(() => _bookNow = true),
+              selected: _bookMode == 0,
+              onTap: () => setState(() => _bookMode = 0),
             ),
           ),
           Expanded(
             child: _modeButton(
               icon: Icons.calendar_today_rounded,
               label: 'Book Later',
-              selected: !_bookNow,
-              onTap: () => setState(() => _bookNow = false),
+              selected: _bookMode == 1,
+              onTap: () => setState(() => _bookMode = 1),
             ),
           ),
+          if (service.allowMonthBooking)
+            Expanded(
+              child: _modeButton(
+                icon: Icons.calendar_month_rounded,
+                label: 'Monthly',
+                selected: _bookMode == 2,
+                onTap: () => setState(() => _bookMode = 2),
+              ),
+            ),
         ],
       ),
     );

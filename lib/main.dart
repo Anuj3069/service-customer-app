@@ -25,6 +25,7 @@ import 'screens/payment_result_screen.dart';
 import 'screens/address_search_screen.dart';
 import 'screens/saved_addresses_screen.dart';
 import 'screens/add_edit_address_screen.dart';
+import 'screens/month_booking_screen.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -76,6 +77,7 @@ class AirveatCustomerApp extends StatelessWidget {
           '/address-search': (context) => const AddressSearchScreen(),
           '/saved-addresses': (context) => const SavedAddressesScreen(),
           '/add-address': (context) => const AddEditAddressScreen(),
+          '/month-booking': (context) => const MonthBookingScreen(),
         },
       ),
     );

@@ -8,6 +8,12 @@ class Booking {
   final String status;
   final double price;
   final String type; // 'SCHEDULED' or 'INSTANT'
+  final String bookingType; // BOOK_LATER, BOOK_INSTANT, BOOK_FOR_MONTH
+  final String? durationType; // HALF_DAY or FULL_DAY
+  final int? durationHours; // 9 or 16
+  final Map<String, dynamic>? monthContract; // startDate, endDate, totalDays, dailyPrice
+  final String? parentBookingId;
+  final int? bookingSequence;
   final String? expiresAt;
   final String? requestedAt;
   final String? acceptedAt;
@@ -41,6 +47,12 @@ class Booking {
     required this.status,
     required this.price,
     this.type = 'SCHEDULED',
+    this.bookingType = 'BOOK_LATER',
+    this.durationType,
+    this.durationHours,
+    this.monthContract,
+    this.parentBookingId,
+    this.bookingSequence,
     this.expiresAt,
     this.requestedAt,
     this.acceptedAt,
@@ -91,6 +103,14 @@ class Booking {
       status: json['status'] ?? 'pending',
       price: (json['price'] ?? 0).toDouble(),
       type: json['type'] ?? 'SCHEDULED',
+      bookingType: json['bookingType'] ?? 'BOOK_LATER',
+      durationType: json['durationType'],
+      durationHours: json['durationHours'] != null ? (json['durationHours'] as num).toInt() : null,
+      monthContract: json['monthContract'] is Map ? Map<String, dynamic>.from(json['monthContract']) : null,
+      parentBookingId: json['parentBookingId'] is Map
+          ? json['parentBookingId']['_id']
+          : json['parentBookingId'],
+      bookingSequence: json['bookingSequence'] != null ? (json['bookingSequence'] as num).toInt() : null,
       expiresAt: json['expiresAt'],
       requestedAt: json['requestedAt'],
       acceptedAt: json['acceptedAt'],
@@ -124,6 +144,8 @@ class Booking {
   }
 
   bool get isInstant => type == 'INSTANT';
+  bool get isMonthBooking => bookingType == 'BOOK_FOR_MONTH';
+  bool get isMonthMaster => isMonthBooking && parentBookingId == null;
   bool get isRequested => status == 'requested';
   bool get isPending => status == 'pending';
   bool get isExpired => status == 'expired';

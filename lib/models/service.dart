@@ -46,6 +46,7 @@ class Service {
   final String? categoryId;
   final Category? category;
   final bool isActive;
+  final bool allowMonthBooking;
 
   Service({
     required this.id,
@@ -57,6 +58,7 @@ class Service {
     this.categoryId,
     this.category,
     this.isActive = true,
+    this.allowMonthBooking = false,
   });
 
   factory Service.fromJson(
@@ -80,6 +82,7 @@ class Service {
       categoryId: json['category'] is String ? json['category'] : cat?.id,
       category: cat,
       isActive: json['isActive'] ?? true,
+      allowMonthBooking: json['allowMonthBooking'] ?? false,
     );
   }
 }
