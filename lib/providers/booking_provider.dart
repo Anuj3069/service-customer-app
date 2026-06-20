@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../config/navigation_service.dart';
 import '../models/booking.dart';
 import '../models/match_result.dart';
 import '../services/booking_api_service.dart';
@@ -31,6 +32,11 @@ class BookingProvider extends ChangeNotifier {
   List<double>? _workerCoordinates;
   int? _lastLocationTimestamp;
   String? _trackingBookingId;
+  // GeoJSON [lng, lat] of the booked service address
+  List<double>? _trackingCustomerCoords;
+
+  // ── Accepted booking banner state ─────────────────
+  Map<String, dynamic>? _acceptedBookingNotification;
 
   // ── Real-time notification state ───────────────────
   bool _isSocketConnected = false;
@@ -62,11 +68,19 @@ class BookingProvider extends ChangeNotifier {
   List<Map<String, dynamic>> get realtimeNotifications =>
       _realtimeNotifications;
 
+  Map<String, dynamic>? get acceptedBookingNotification => _acceptedBookingNotification;
+
+  void clearAcceptedBooking() {
+    _acceptedBookingNotification = null;
+    notifyListeners();
+  }
+
   // ── Live Tracking Getters ──
   bool get isTracking => _isTracking;
   List<double>? get workerCoordinates => _workerCoordinates;
   int? get lastLocationTimestamp => _lastLocationTimestamp;
   String? get trackingBookingId => _trackingBookingId;
+  List<double>? get trackingCustomerCoords => _trackingCustomerCoords;
 
   /// Computed getters for booking categories
   List<Booking> get pendingBookings =>
@@ -119,6 +133,7 @@ class BookingProvider extends ChangeNotifier {
 
       if (connected && _refreshOnReconnect) {
         _refreshOnReconnect = false;
+        _checkForMissedAcceptance();
         fetchBookings();
         if (_selectedBooking != null) {
           fetchBookingById(_selectedBooking!.id);
@@ -175,6 +190,14 @@ class BookingProvider extends ChangeNotifier {
     _acceptedSub = _socketService.onBookingAccepted.listen((data) {
       debugPrint('[BookingProvider] ✅ booking-accepted: $data');
 
+      // Deep-convert nested maps so banner can safely read provider.name
+      final provider = data['provider'];
+      final normalised = Map<String, dynamic>.from(data);
+      if (provider is Map) {
+        normalised['provider'] = Map<String, dynamic>.from(provider);
+      }
+      _acceptedBookingNotification = normalised;
+
       _addNotification(
         type: 'accepted',
         title: 'Booking Accepted!',
@@ -182,9 +205,17 @@ class BookingProvider extends ChangeNotifier {
         data: data,
       );
 
-      // Auto-refresh booking list to show updated status
       fetchBookings();
       notifyListeners();
+
+      // Defer navigation until after the current frame to avoid conflicting
+      // with any ongoing widget rebuild triggered by notifyListeners().
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        navigatorKey.currentState?.pushNamedAndRemoveUntil(
+          '/home',
+          (route) => false,
+        );
+      });
     });
 
     // ── Scheduled booking rejected by worker ──
@@ -228,6 +259,8 @@ class BookingProvider extends ChangeNotifier {
       _trackingBookingId = bookingId;
       _workerCoordinates = null;
       _lastLocationTimestamp = null;
+      // Preserve booking address coords from instant booking if available
+      _trackingCustomerCoords ??= _instantBooking?.customerLocationCoordinates;
 
       _addNotification(
         type: 'tracking',
@@ -402,6 +435,32 @@ class BookingProvider extends ChangeNotifier {
     }
   }
 
+  /// Check if any booking transitioned to accepted while the socket was offline.
+  /// Called on socket reconnect so missed booking-accepted events are surfaced.
+  Future<void> _checkForMissedAcceptance() async {
+    try {
+      final fresh = await _bookingApi.getBookings(status: 'accepted');
+      // Only show the banner if we weren't already showing one
+      if (_acceptedBookingNotification != null) return;
+      if (fresh.isEmpty) return;
+
+      final latest = fresh.first;
+      _acceptedBookingNotification = {
+        'bookingId': latest.id,
+        'provider': {'name': latest.providerName},
+        'missedWhileOffline': true,
+      };
+      notifyListeners();
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        navigatorKey.currentState?.pushNamedAndRemoveUntil(
+          '/home',
+          (route) => false,
+        );
+      });
+    } catch (_) {}
+  }
+
   /// Reset instant booking state
   void resetInstantBooking() {
     _instantBooking = null;
@@ -416,6 +475,7 @@ class BookingProvider extends ChangeNotifier {
     _workerCoordinates = null;
     _lastLocationTimestamp = null;
     _trackingBookingId = null;
+    _trackingCustomerCoords = null;
     notifyListeners();
   }
 
@@ -423,6 +483,7 @@ class BookingProvider extends ChangeNotifier {
   void startTrackingBooking(Booking booking) {
     _isTracking = true;
     _trackingBookingId = booking.id;
+    _trackingCustomerCoords = booking.customerLocationCoordinates;
     if (booking.workerLocationCoordinates != null) {
       _workerCoordinates = booking.workerLocationCoordinates;
       _lastLocationTimestamp = DateTime.now().millisecondsSinceEpoch;

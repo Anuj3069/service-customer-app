@@ -4,11 +4,9 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
-import 'package:geolocator/geolocator.dart';
 import '../config/theme.dart';
 import '../providers/booking_provider.dart';
 import '../services/booking_api_service.dart';
-import '../utils/location_helper.dart';
 
 /// Full-screen live tracking UI shown to the customer while the worker is en route.
 /// Displays a real-time OpenStreetMap with the worker and customer locations.
@@ -32,8 +30,7 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen>
 
   final MapController _mapController = MapController();
 
-  Position? _customerPosition;
-  final LatLng _fallbackCustomerCenter = const LatLng(22.5726, 88.3639); // Kolkata fallback
+  static const LatLng _fallbackCustomerCenter = LatLng(22.5726, 88.3639);
 
   // OTP state
   String? _otp;
@@ -71,7 +68,6 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen>
       CurvedAnimation(parent: _arrivalController, curve: Curves.easeIn),
     );
 
-    _fetchCustomerLocation();
   }
 
   @override
@@ -92,17 +88,6 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen>
     _pulseController.dispose();
     _arrivalController.dispose();
     super.dispose();
-  }
-
-  Future<void> _fetchCustomerLocation() async {
-    try {
-      final position = await LocationHelper.getCurrentLocation();
-      if (position != null && mounted) {
-        setState(() {
-          _customerPosition = position;
-        });
-      }
-    } catch (_) {}
   }
 
   Future<void> _fetchOtp() async {
@@ -156,15 +141,15 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen>
     return r * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a));
   }
 
-  void _checkProximity(List<double>? workerCoords) {
+  void _checkProximity(List<double>? workerCoords, List<double>? customerCoords) {
     if (workerCoords == null || workerCoords.length < 2) return;
-    if (_customerPosition == null) return;
+    if (customerCoords == null || customerCoords.length < 2) return;
 
     final dist = _haversineDistance(
-      _customerPosition!.latitude,
-      _customerPosition!.longitude,
-      workerCoords[1], // latitude
-      workerCoords[0], // longitude
+      customerCoords[1], // lat  (GeoJSON: [lng, lat])
+      customerCoords[0], // lng
+      workerCoords[1],
+      workerCoords[0],
     );
 
     final isNearby = dist < 100;
@@ -185,7 +170,7 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen>
 
         // Check 100m proximity whenever location updates
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          _checkProximity(workerCoords);
+          _checkProximity(workerCoords, bp.trackingCustomerCoords);
         });
 
         // Auto-center camera on worker when location updates
@@ -244,10 +229,11 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen>
 
   Widget _buildMapContent(BookingProvider bp) {
     final workerCoords = bp.workerCoordinates;
+    final customerCoords = bp.trackingCustomerCoords;
 
-    // Determine customer coordinate
-    final customerLatLng = _customerPosition != null
-        ? LatLng(_customerPosition!.latitude, _customerPosition!.longitude)
+    // Use the booked service address; fall back to Kolkata if coords not yet available
+    final customerLatLng = (customerCoords != null && customerCoords.length == 2)
+        ? LatLng(customerCoords[1], customerCoords[0]) // GeoJSON: [lng, lat]
         : _fallbackCustomerCenter;
 
     // Determine worker coordinate

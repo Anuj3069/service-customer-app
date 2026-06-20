@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import 'config/theme.dart';
+import 'config/navigation_service.dart';
 import 'providers/auth_provider.dart';
 import 'providers/service_provider.dart' as sp;
 import 'providers/booking_provider.dart';
@@ -26,8 +27,7 @@ import 'screens/address_search_screen.dart';
 import 'screens/saved_addresses_screen.dart';
 import 'screens/add_edit_address_screen.dart';
 import 'screens/month_booking_screen.dart';
-
-final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+import 'screens/month_services_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -78,6 +78,7 @@ class AirveatCustomerApp extends StatelessWidget {
           '/saved-addresses': (context) => const SavedAddressesScreen(),
           '/add-address': (context) => const AddEditAddressScreen(),
           '/month-booking': (context) => const MonthBookingScreen(),
+          '/month-services': (context) => const MonthServicesScreen(),
         },
       ),
     );

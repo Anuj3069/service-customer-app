@@ -109,7 +109,122 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: _buildReferenceBottomNav(),
+      bottomNavigationBar: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Consumer<BookingProvider>(
+            builder: (context, bp, _) {
+              final data = bp.acceptedBookingNotification;
+              if (data == null) return const SizedBox.shrink();
+              return _buildAcceptedBanner(context, bp, data);
+            },
+          ),
+          _buildReferenceBottomNav(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAcceptedBanner(
+    BuildContext context,
+    BookingProvider bp,
+    Map<String, dynamic> data,
+  ) {
+    final providerRaw = data['provider'];
+    final providerName = (data['providerName']?.toString()) ??
+        (providerRaw is Map ? providerRaw['name']?.toString() : null) ??
+        'Your provider';
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [AppTheme.success, Color(0xFF0E9E56)],
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.success.withValues(alpha: 0.35),
+            blurRadius: 14,
+            offset: const Offset(0, -4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.2),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.check_circle_rounded,
+              color: Colors.white,
+              size: 22,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Booking Accepted!',
+                  style: GoogleFonts.outfit(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                  ),
+                ),
+                Text(
+                  '$providerName is on your booking',
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    color: Colors.white.withValues(alpha: 0.9),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              bp.clearAcceptedBooking();
+              Navigator.pushNamed(context, '/bookings');
+            },
+            style: TextButton.styleFrom(
+              backgroundColor: Colors.white.withValues(alpha: 0.2),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            child: Text(
+              'View',
+              style: GoogleFonts.inter(
+                fontSize: 13,
+                fontWeight: FontWeight.w800,
+                color: Colors.white,
+              ),
+            ),
+          ),
+          const SizedBox(width: 6),
+          GestureDetector(
+            onTap: bp.clearAcceptedBooking,
+            child: Icon(
+              Icons.close_rounded,
+              color: Colors.white.withValues(alpha: 0.8),
+              size: 20,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -134,6 +249,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   _buildServicesList(),
                   const SizedBox(height: 12),
                   _buildAllServicesCard(),
+                  const SizedBox(height: 12),
+                  _buildMonthBookingCard(),
                   const SizedBox(height: 12),
                   _buildBookingSection(),
                   const SizedBox(height: 12),
@@ -639,6 +756,97 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildMonthBookingCard() {
+    return Consumer<sp.ServiceProvider>(
+      builder: (context, serviceProvider, _) {
+        final monthServices = serviceProvider.serviceCategories
+            .expand((cat) => cat.services)
+            .where((s) => s.allowMonthBooking)
+            .toList();
+
+        if (monthServices.isEmpty) return const SizedBox.shrink();
+
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: GestureDetector(
+            onTap: () => Navigator.pushNamed(
+              context,
+              '/month-services',
+              arguments: monthServices,
+            ),
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF1E1B4B), Color(0xFF3730A3)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(8),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF3730A3).withValues(alpha: 0.30),
+                    blurRadius: 14,
+                    offset: const Offset(0, 7),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.18)),
+                    ),
+                    child: const Icon(
+                      Icons.calendar_month_rounded,
+                      color: Colors.white,
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Book for Month',
+                          style: GoogleFonts.outfit(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '${monthServices.length} service${monthServices.length > 1 ? 's' : ''} available · Half or Full day',
+                          style: GoogleFonts.inter(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white.withValues(alpha: 0.75),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Icon(
+                    Icons.chevron_right_rounded,
+                    color: Colors.white,
+                    size: 26,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 
