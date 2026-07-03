@@ -41,6 +41,10 @@ class SocketService {
       StreamController<Map<String, dynamic>>.broadcast();
   final _bookingPaidController =
       StreamController<Map<String, dynamic>>.broadcast();
+  final _supportMessageController =
+      StreamController<Map<String, dynamic>>.broadcast();
+  final _supportStatusController =
+      StreamController<Map<String, dynamic>>.broadcast();
   final _connectionStateController = StreamController<bool>.broadcast();
 
   // ── Public Streams ──
@@ -62,6 +66,10 @@ class SocketService {
       _chatMessageController.stream;
   Stream<Map<String, dynamic>> get onBookingPaid =>
       _bookingPaidController.stream;
+  Stream<Map<String, dynamic>> get onSupportMessage =>
+      _supportMessageController.stream;
+  Stream<Map<String, dynamic>> get onSupportStatusChanged =>
+      _supportStatusController.stream;
   Stream<bool> get onConnectionStateChanged =>
       _connectionStateController.stream;
 
@@ -203,6 +211,16 @@ class SocketService {
       _addToController(_bookingPaidController, data);
     });
 
+    _socket!.on('support-message', (data) {
+      if (kDebugMode) debugPrint('[Socket] 🎫 support-message: $data');
+      _addToController(_supportMessageController, data);
+    });
+
+    _socket!.on('support-status-changed', (data) {
+      if (kDebugMode) debugPrint('[Socket] 🎫 support-status-changed: $data');
+      _addToController(_supportStatusController, data);
+    });
+
     _socket!.connect();
   }
 
@@ -217,6 +235,14 @@ class SocketService {
     } else if (data is Map) {
       controller.add(Map<String, dynamic>.from(data));
     }
+  }
+
+  void joinSupportRoom(String ticketId) {
+    _socket?.emit('join-support', {'ticketId': ticketId});
+  }
+
+  void leaveSupportRoom(String ticketId) {
+    _socket?.emit('leave-support', {'ticketId': ticketId});
   }
 
   /// Disconnect from socket server
@@ -240,6 +266,8 @@ class SocketService {
     _workerLocationController.close();
     _chatMessageController.close();
     _bookingPaidController.close();
+    _supportMessageController.close();
+    _supportStatusController.close();
     _connectionStateController.close();
   }
 }

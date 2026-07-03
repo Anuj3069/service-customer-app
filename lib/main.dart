@@ -28,6 +28,7 @@ import 'screens/saved_addresses_screen.dart';
 import 'screens/add_edit_address_screen.dart';
 import 'screens/month_booking_screen.dart';
 import 'screens/month_services_screen.dart';
+import 'screens/support_chat_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -79,6 +80,7 @@ class AirveatCustomerApp extends StatelessWidget {
           '/add-address': (context) => const AddEditAddressScreen(),
           '/month-booking': (context) => const MonthBookingScreen(),
           '/month-services': (context) => const MonthServicesScreen(),
+          '/support-chat': (context) => const SupportChatScreen(),
         },
       ),
     );

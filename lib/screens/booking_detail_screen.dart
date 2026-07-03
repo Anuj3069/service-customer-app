@@ -723,7 +723,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                                   child: Text(
                                     booking.paymentStatus == 'pending'
                                         ? 'Payment is pending verification...'
-                                        : 'Payment is required to complete transaction.',
+                                        : 'Paid in cash? Your provider will confirm receipt. Or pay online below.',
                                     style: GoogleFonts.inter(
                                       fontSize: 13,
                                       fontWeight: FontWeight.w600,
@@ -748,6 +748,26 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                             },
                           ),
                         ],
+                      ],
+                      if (['accepted', 'completed', 'cancelled']
+                          .contains(booking.status)) ...[
+                        const SizedBox(height: 12),
+                        GradientButton(
+                          text: 'Contact Support',
+                          icon: Icons.support_agent_rounded,
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF6C63FF), Color(0xFF4A47C1)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          onPressed: () {
+                            Navigator.pushNamed(
+                              context,
+                              '/support-chat',
+                              arguments: {'bookingId': booking.id},
+                            );
+                          },
+                        ),
                       ],
                       const SizedBox(height: 40),
                     ],

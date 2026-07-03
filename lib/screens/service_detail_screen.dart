@@ -810,15 +810,6 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
               onTap: () => setState(() => _bookMode = 1),
             ),
           ),
-          if (service.allowMonthBooking)
-            Expanded(
-              child: _modeButton(
-                icon: Icons.calendar_month_rounded,
-                label: 'Monthly',
-                selected: _bookMode == 2,
-                onTap: () => setState(() => _bookMode = 2),
-              ),
-            ),
         ],
       ),
     );

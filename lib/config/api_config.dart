@@ -41,6 +41,14 @@ class ApiConfig {
   static String payBookingCash(String id) => '/user/bookings/$id/pay-cash';
   static String verifyPayment(String id) => '/payments/$id/verify';
 
+  // Support
+  static String createSupportTicket(String bookingId) =>
+      '/user/bookings/$bookingId/support';
+  static String getSupportTicket(String bookingId) =>
+      '/user/bookings/$bookingId/support';
+  static String supportMessages(String ticketId) =>
+      '/user/support/$ticketId/messages';
+
   // Addresses
   static const String addresses = '/user/addresses';
   static const String defaultAddress = '/user/addresses/default';
