@@ -150,6 +150,8 @@ class _NearbyWorkersScreenState extends State<NearbyWorkersScreen> {
       return const Scaffold(body: Center(child: Text('Invalid Category')));
     }
 
+    final topInset = MediaQuery.of(context).padding.top;
+
     return Scaffold(
       body: Stack(
         children: [
@@ -166,7 +168,7 @@ class _NearbyWorkersScreenState extends State<NearbyWorkersScreen> {
           // 3. Floating Quick Info badges
           if (!_isLoadingLocation && !_isLoadingWorkers && _workers.isNotEmpty)
             Positioned(
-              top: kToolbarHeight + 40,
+              top: topInset + 74,
               right: 16,
               child: _buildWorkerCountOverlay(),
             ),
@@ -206,10 +208,10 @@ class _NearbyWorkersScreenState extends State<NearbyWorkersScreen> {
 
           // 6. Loading overlay for background refresh
           if (_isLoadingWorkers && _workers.isNotEmpty)
-            const Positioned(
-              top: kToolbarHeight + 40,
+            Positioned(
+              top: topInset + 74,
               left: 16,
-              child: SizedBox(
+              child: const SizedBox(
                 width: 20,
                 height: 20,
                 child: CircularProgressIndicator(

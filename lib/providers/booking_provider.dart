@@ -204,7 +204,12 @@ class BookingProvider extends ChangeNotifier {
         data: data,
       );
 
+      // Auto-refresh booking list and the currently-open booking detail
       fetchBookings();
+      if (_selectedBooking != null &&
+          _selectedBooking!.id == data['bookingId']) {
+        fetchBookingById(_selectedBooking!.id);
+      }
       notifyListeners();
     });
 
@@ -220,8 +225,12 @@ class BookingProvider extends ChangeNotifier {
         data: data,
       );
 
-      // Auto-refresh booking list
+      // Auto-refresh booking list and the currently-open booking detail
       fetchBookings();
+      if (_selectedBooking != null &&
+          _selectedBooking!.id == data['bookingId']) {
+        fetchBookingById(_selectedBooking!.id);
+      }
       notifyListeners();
     });
 
@@ -236,8 +245,12 @@ class BookingProvider extends ChangeNotifier {
         data: data,
       );
 
-      // Auto-refresh booking list
+      // Auto-refresh booking list and the currently-open booking detail
       fetchBookings();
+      if (_selectedBooking != null &&
+          _selectedBooking!.id == data['bookingId']) {
+        fetchBookingById(_selectedBooking!.id);
+      }
       notifyListeners();
     });
 

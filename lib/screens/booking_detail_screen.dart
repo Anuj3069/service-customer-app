@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -22,6 +23,9 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
   bool _refreshing = false;
   bool _canceling = false;
 
+  BookingProvider? _bookingProvider;
+  Timer? _pollTimer;
+
   // OTP state
   String? _otp;
   bool _otpLoading = false;
@@ -30,14 +34,61 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    final isFirstLoad = _booking == null;
     // Only seed from route args the very first time
     _booking ??= ModalRoute.of(context)!.settings.arguments as Booking;
+
+    if (isFirstLoad) {
+      _bookingProvider = context.read<BookingProvider>();
+      _bookingProvider!.addListener(_onProviderChanged);
+      // Populate the provider's selectedBooking immediately so socket
+      // events (booking-accepted/rejected/completed) that arrive while
+      // this screen is open know to refresh it.
+      _refreshBooking();
+      _startPolling();
+    }
   }
 
   @override
   void didUpdateWidget(covariant BookingDetailScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
     _refreshBooking();
+  }
+
+  @override
+  void dispose() {
+    _bookingProvider?.removeListener(_onProviderChanged);
+    _pollTimer?.cancel();
+    super.dispose();
+  }
+
+  /// Reacts to BookingProvider.notifyListeners() (fired on booking-accepted /
+  /// booking-rejected / booking-completed / booking-paid socket events) so
+  /// this screen doesn't stay stuck showing stale status + Cancel button.
+  void _onProviderChanged() {
+    final fresh = _bookingProvider?.selectedBooking;
+    if (fresh != null &&
+        _booking != null &&
+        fresh.id == _booking!.id &&
+        fresh.status != _booking!.status) {
+      setState(() => _booking = fresh);
+    }
+  }
+
+  /// Fallback in case the socket event is missed (app backgrounded,
+  /// reconnect race, etc.) - poll while the booking is still awaiting
+  /// a worker's response.
+  void _startPolling() {
+    _pollTimer?.cancel();
+    _pollTimer = Timer.periodic(const Duration(seconds: 6), (_) {
+      final booking = _booking;
+      if (!mounted || booking == null) return;
+      if (booking.isPending || booking.isRequested) {
+        _refreshBooking();
+      } else {
+        _pollTimer?.cancel();
+      }
+    });
   }
 
   /// Re-fetch the booking every time this screen comes back into focus

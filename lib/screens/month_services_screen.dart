@@ -28,7 +28,12 @@ class MonthServicesScreen extends StatelessWidget {
                 Expanded(
                   child: ListView.separated(
                     physics: const BouncingScrollPhysics(),
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+                    padding: EdgeInsets.fromLTRB(
+                      16,
+                      16,
+                      16,
+                      32 + MediaQuery.of(context).padding.bottom,
+                    ),
                     itemCount: monthServices.length,
                     separatorBuilder: (_, __) => const SizedBox(height: 14),
                     itemBuilder: (context, i) =>

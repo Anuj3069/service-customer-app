@@ -167,6 +167,7 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen>
     return Consumer<BookingProvider>(
       builder: (context, bp, _) {
         final workerCoords = bp.workerCoordinates;
+        final topInset = MediaQuery.of(context).padding.top;
 
         // Check 100m proximity whenever location updates
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -199,7 +200,7 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen>
 
               // 3. Blinking LIVE badge
               Positioned(
-                top: kToolbarHeight + 40,
+                top: topInset + 74,
                 left: 16,
                 child: _buildLiveBadge(),
               ),
@@ -215,7 +216,7 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen>
               // 5. Worker Arrived overlay (100m alert)
               if (_workerNearby)
                 Positioned(
-                  top: kToolbarHeight + 80,
+                  top: topInset + 114,
                   left: 20,
                   right: 20,
                   child: _buildNearbyAlert(),

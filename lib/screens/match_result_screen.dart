@@ -33,7 +33,10 @@ class _MatchResultScreenState extends State<MatchResultScreen> {
           backgroundColor: Color(0xFF00C853),
         ),
       );
-      navigator.pushReplacementNamed('/booking-detail');
+      navigator.pushReplacementNamed(
+        '/booking-detail',
+        arguments: bookingProvider.selectedBooking,
+      );
     } else {
       messenger.showSnackBar(
         SnackBar(

@@ -23,7 +23,8 @@ class GradientButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: width ?? double.infinity,
-      height: 52,
+      constraints: const BoxConstraints(minHeight: 52),
+      padding: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
         gradient: onPressed != null
             ? (gradient ?? AppTheme.primaryGradient)
@@ -64,13 +65,16 @@ class GradientButton extends StatelessWidget {
                         Icon(icon, color: Colors.white, size: 20),
                         const SizedBox(width: 10),
                       ],
-                      Text(
-                        text,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0,
+                      Flexible(
+                        child: Text(
+                          text,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0,
+                          ),
                         ),
                       ),
                     ],

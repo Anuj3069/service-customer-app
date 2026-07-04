@@ -245,14 +245,11 @@ class _LoginScreenState extends State<LoginScreen>
           },
         ),
         const SizedBox(height: 12),
-        SizedBox(
-          height: 52,
-          child: GradientButton(
-            text: 'Send OTP Code',
-            isLoading: authProvider.isLoading,
-            onPressed: _handleSendOtp,
-            icon: Icons.arrow_forward_rounded,
-          ),
+        GradientButton(
+          text: 'Send OTP Code',
+          isLoading: authProvider.isLoading,
+          onPressed: _handleSendOtp,
+          icon: Icons.arrow_forward_rounded,
         ),
       ],
     );
@@ -314,14 +311,11 @@ class _LoginScreenState extends State<LoginScreen>
           ],
         ),
         const SizedBox(height: 10),
-        SizedBox(
-          height: 52,
-          child: GradientButton(
-            text: 'Verify & Log In',
-            isLoading: authProvider.isLoading,
-            onPressed: _handleVerifyOtp,
-            icon: Icons.arrow_forward_rounded,
-          ),
+        GradientButton(
+          text: 'Verify & Log In',
+          isLoading: authProvider.isLoading,
+          onPressed: _handleVerifyOtp,
+          icon: Icons.arrow_forward_rounded,
         ),
       ],
     );
