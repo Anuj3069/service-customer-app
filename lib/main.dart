@@ -8,6 +8,7 @@ import 'providers/auth_provider.dart';
 import 'providers/service_provider.dart' as sp;
 import 'providers/booking_provider.dart';
 import 'providers/address_provider.dart';
+import 'services/api_client.dart';
 import 'screens/splash_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
@@ -41,8 +42,45 @@ void main() {
   runApp(const AirveatCustomerApp());
 }
 
-class AirveatCustomerApp extends StatelessWidget {
+class AirveatCustomerApp extends StatefulWidget {
   const AirveatCustomerApp({super.key});
+
+  @override
+  State<AirveatCustomerApp> createState() => _AirveatCustomerAppState();
+}
+
+class _AirveatCustomerAppState extends State<AirveatCustomerApp>
+    with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // The OS can suspend/kill the socket connection while the app is
+    // backgrounded; plain Socket.IO reconnection can't recover from that
+    // since it relies on the process actively running. Force a fresh
+    // connect when the app comes back to the foreground so chat/support
+    // messages sent during the gap don't require a manual app relaunch.
+    if (state == AppLifecycleState.resumed) {
+      _reconnectSocketIfLoggedIn();
+    }
+  }
+
+  Future<void> _reconnectSocketIfLoggedIn() async {
+    final userData = await ApiClient.getUserData();
+    final userId = (userData?['id'] ?? userData?['_id'])?.toString();
+    if (userId == null || userId.isEmpty || !mounted) return;
+    context.read<BookingProvider>().connectSocket(userId);
+  }
 
   @override
   Widget build(BuildContext context) {
