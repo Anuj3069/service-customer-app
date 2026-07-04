@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import '../config/navigation_service.dart';
 import '../models/booking.dart';
 import '../models/match_result.dart';
 import '../services/booking_api_service.dart';
@@ -207,15 +206,6 @@ class BookingProvider extends ChangeNotifier {
 
       fetchBookings();
       notifyListeners();
-
-      // Defer navigation until after the current frame to avoid conflicting
-      // with any ongoing widget rebuild triggered by notifyListeners().
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        navigatorKey.currentState?.pushNamedAndRemoveUntil(
-          '/home',
-          (route) => false,
-        );
-      });
     });
 
     // ── Scheduled booking rejected by worker ──
@@ -451,13 +441,6 @@ class BookingProvider extends ChangeNotifier {
         'missedWhileOffline': true,
       };
       notifyListeners();
-
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        navigatorKey.currentState?.pushNamedAndRemoveUntil(
-          '/home',
-          (route) => false,
-        );
-      });
     } catch (_) {}
   }
 
