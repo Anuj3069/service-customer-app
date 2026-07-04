@@ -187,7 +187,12 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
   Widget build(BuildContext context) {
     final booking = _booking;
     if (booking == null) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return Scaffold(
+        body: Container(
+          decoration: const BoxDecoration(gradient: AppTheme.bgGradient),
+          child: const Center(child: CircularProgressIndicator()),
+        ),
+      );
     }
 
     return Scaffold(

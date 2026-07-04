@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../config/theme.dart';
+import '../models/match_result.dart';
 import '../providers/booking_provider.dart';
 import '../providers/address_provider.dart';
 import '../widgets/gradient_button.dart';
@@ -15,6 +16,11 @@ class MatchResultScreen extends StatefulWidget {
 }
 
 class _MatchResultScreenState extends State<MatchResultScreen> {
+  // Keeps the summary UI visible while confirming, even after
+  // BookingProvider.createBooking() clears matchResult on success -
+  // avoids a blank "No match data" flash right before navigating away.
+  MatchResult? _lastMatch;
+
   Future<void> _confirmBooking(BuildContext context) async {
     final bookingProvider = context.read<BookingProvider>();
     final messenger = ScaffoldMessenger.of(context);
@@ -55,7 +61,10 @@ class _MatchResultScreenState extends State<MatchResultScreen> {
         child: SafeArea(
           child: Consumer<BookingProvider>(
             builder: (context, bookingProvider, _) {
-              final match = bookingProvider.matchResult;
+              if (bookingProvider.matchResult != null) {
+                _lastMatch = bookingProvider.matchResult;
+              }
+              final match = _lastMatch;
               if (match == null) {
                 return const Center(
                   child: Text(
