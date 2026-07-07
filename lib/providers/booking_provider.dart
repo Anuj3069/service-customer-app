@@ -441,6 +441,10 @@ class BookingProvider extends ChangeNotifier {
   /// Check if any booking transitioned to accepted while the socket was offline.
   /// Called on socket reconnect so missed booking-accepted events are surfaced.
   Future<void> _checkForMissedAcceptance() async {
+    // Reconcile the instant-booking finder screen first, in case the
+    // `booking-confirmed` push was missed while offline.
+    await checkInstantBookingStatus();
+
     try {
       final fresh = await _bookingApi.getBookings(status: 'accepted');
       // Only show the banner if we weren't already showing one
@@ -454,6 +458,29 @@ class BookingProvider extends ChangeNotifier {
         'missedWhileOffline': true,
       };
       notifyListeners();
+    } catch (_) {}
+  }
+
+  /// Actively verify the current instant booking's status with the server.
+  /// Safety-net for cases where the `booking-confirmed` socket event never
+  /// arrives (e.g. dropped packet) without a detectable disconnect, which
+  /// otherwise leaves the finder screen stuck on "searching" forever.
+  Future<void> checkInstantBookingStatus() async {
+    final booking = _instantBooking;
+    if (booking == null || _instantStatus != 'searching') return;
+
+    try {
+      final fresh = await _bookingApi.getBookingById(booking.id);
+      if (fresh.isAccepted) {
+        _instantStatus = 'confirmed';
+        _confirmedProvider = fresh.providerDetails?['userId'] is Map
+            ? Map<String, dynamic>.from(fresh.providerDetails!['userId'])
+            : {'name': fresh.providerName};
+        notifyListeners();
+      } else if (fresh.isExpired) {
+        _instantStatus = 'expired';
+        notifyListeners();
+      }
     } catch (_) {}
   }
 

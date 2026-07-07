@@ -28,6 +28,7 @@ class _InstantBookingScreenState extends State<InstantBookingScreen>
 
   Timer? _countdownTimer;
   Timer? _elapsedTimer;
+  Timer? _statusPollTimer;
   int _secondsRemaining = 300; // Default 5 minutes, synced with Redis TTL
   int _elapsedSeconds = 0;
   bool _canceling = false;
@@ -78,6 +79,15 @@ class _InstantBookingScreenState extends State<InstantBookingScreen>
       if (mounted) setState(() => _elapsedSeconds++);
     });
 
+    // Safety-net: periodically verify status directly with the server in
+    // case the `booking-confirmed` socket event is dropped without a
+    // detectable disconnect, which would otherwise strand this screen on
+    // "searching" until the app is relaunched.
+    _statusPollTimer = Timer.periodic(const Duration(seconds: 8), (_) {
+      if (!mounted) return;
+      context.read<BookingProvider>().checkInstantBookingStatus();
+    });
+
     // Listen for tracking to auto-navigate to live tracking screen
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final bp = context.read<BookingProvider>();
@@ -108,6 +118,7 @@ class _InstantBookingScreenState extends State<InstantBookingScreen>
     _rotateController.dispose();
     _countdownTimer?.cancel();
     _elapsedTimer?.cancel();
+    _statusPollTimer?.cancel();
     super.dispose();
   }
 

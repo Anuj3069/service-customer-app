@@ -44,6 +44,8 @@ class Service {
   final double? monthBasePrice;
   final int duration;
   final List<String> requiredSkills;
+  final List<String> dos;
+  final List<String> donts;
   final String? categoryId;
   final Category? category;
   final bool isActive;
@@ -57,6 +59,8 @@ class Service {
     this.monthBasePrice,
     required this.duration,
     required this.requiredSkills,
+    this.dos = const [],
+    this.donts = const [],
     this.categoryId,
     this.category,
     this.isActive = true,
@@ -82,6 +86,8 @@ class Service {
       monthBasePrice: json['monthBasePrice'] != null ? (json['monthBasePrice']).toDouble() : null,
       duration: json['duration'] ?? 0,
       requiredSkills: List<String>.from(json['requiredSkills'] ?? []),
+      dos: List<String>.from(json['dos'] ?? []),
+      donts: List<String>.from(json['donts'] ?? []),
       categoryId: json['category'] is String ? json['category'] : cat?.id,
       category: cat,
       isActive: json['isActive'] ?? true,

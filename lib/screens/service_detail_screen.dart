@@ -156,7 +156,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
                                     children: [
                                       _infoChip(
                                         Icons.currency_rupee_rounded,
-                                        '₹${service.basePrice.toInt()}',
+                                        '₹${_pricePerHour(service).toStringAsFixed(0)} / hour',
                                       ),
                                       const SizedBox(width: 10),
                                       _infoChip(
@@ -175,6 +175,11 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
                         ),
                       ),
                       const SizedBox(height: 24),
+
+                      if (service.dos.isNotEmpty || service.donts.isNotEmpty) ...[
+                        _buildDosDontsSection(service),
+                        const SizedBox(height: 24),
+                      ],
 
                       _bookModeSelector(service),
                       const SizedBox(height: 24),
@@ -964,6 +969,98 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
     );
   }
 
+  Widget _buildDosDontsSection(Service service) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (service.dos.isNotEmpty)
+          Expanded(
+            child: _rulesCard(
+              title: "DO'S",
+              items: service.dos,
+              icon: Icons.check_circle_rounded,
+              itemIcon: Icons.check_rounded,
+              color: AppTheme.success,
+              backgroundColor: const Color(0xFFEFFAF3),
+            ),
+          ),
+        if (service.dos.isNotEmpty && service.donts.isNotEmpty)
+          const SizedBox(width: 14),
+        if (service.donts.isNotEmpty)
+          Expanded(
+            child: _rulesCard(
+              title: "DON'TS",
+              items: service.donts,
+              icon: Icons.cancel_rounded,
+              itemIcon: Icons.close_rounded,
+              color: AppTheme.error,
+              backgroundColor: const Color(0xFFFDF1F1),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _rulesCard({
+    required String title,
+    required List<String> items,
+    required IconData icon,
+    required IconData itemIcon,
+    required Color color,
+    required Color backgroundColor,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withValues(alpha: 0.15)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: color, size: 18),
+              const SizedBox(width: 6),
+              Text(
+                title,
+                style: GoogleFonts.outfit(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w800,
+                  color: color,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          ...items.map(
+            (item) => Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(itemIcon, color: color, size: 14),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      item,
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        color: AppTheme.textSecondary,
+                        height: 1.3,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildTrustBanner() {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
@@ -993,6 +1090,11 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
         ],
       ),
     );
+  }
+
+  double _pricePerHour(Service service) {
+    if (service.duration <= 0) return service.basePrice;
+    return service.basePrice / (service.duration / 60.0);
   }
 
   Widget _infoChip(IconData icon, String text) {
