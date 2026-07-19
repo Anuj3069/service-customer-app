@@ -14,24 +14,11 @@ class MonthBookingScreen extends StatefulWidget {
 }
 
 class _MonthBookingScreenState extends State<MonthBookingScreen> {
-  String _durationType = 'HALF_DAY';
   DateTime _selectedMonth = DateTime(DateTime.now().year, DateTime.now().month + 1, 1);
-
-  // Price calculation helpers
-  int get _durationHours => _durationType == 'HALF_DAY' ? 9 : 16;
-
-  double _dailyPrice(double monthBasePrice) {
-    if (_durationType == 'HALF_DAY') return monthBasePrice;
-    return (monthBasePrice * 2).roundToDouble();
-  }
 
   int _workingDays(DateTime start) {
     final last = DateTime(start.year, start.month + 1, 0);
-    int count = 0;
-    for (var d = start; !d.isAfter(last); d = d.add(const Duration(days: 1))) {
-      if (d.weekday != DateTime.sunday) count++;
-    }
-    return count;
+    return last.difference(start).inDays + 1;
   }
 
   String _monthLabel(DateTime dt) {
@@ -64,7 +51,6 @@ class _MonthBookingScreenState extends State<MonthBookingScreen> {
     final bookingProvider = context.read<BookingProvider>();
     final success = await bookingProvider.createMonthBooking(
       serviceId: service.id,
-      durationType: _durationType,
       monthStart: _selectedMonth,
       customerLocation: ap.selectedAddress!.toCustomerLocation(),
     );
@@ -89,7 +75,7 @@ class _MonthBookingScreenState extends State<MonthBookingScreen> {
   Widget build(BuildContext context) {
     final service = ModalRoute.of(context)!.settings.arguments as Service;
     final days = _workingDays(_selectedMonth);
-    final daily = _dailyPrice(service.monthBasePrice ?? service.basePrice);
+    final daily = service.monthBasePrice ?? service.basePrice;
     final total = daily * days;
 
     return Scaffold(
@@ -166,7 +152,7 @@ class _MonthBookingScreenState extends State<MonthBookingScreen> {
                                           fontSize: 16,
                                           fontWeight: FontWeight.w800,
                                           color: AppTheme.textPrimary)),
-                                  Text('Base rate ₹${(service.monthBasePrice ?? service.basePrice).toInt()} / half-day',
+                                  Text('Base rate ₹${(service.monthBasePrice ?? service.basePrice).toInt()} / day',
                                       style: GoogleFonts.inter(
                                           fontSize: 13,
                                           color: AppTheme.textSecondary)),
@@ -177,30 +163,6 @@ class _MonthBookingScreenState extends State<MonthBookingScreen> {
                         ),
                       ),
                       const SizedBox(height: 20),
-
-                      // Duration selector
-                      Text('Duration per Day',
-                          style: GoogleFonts.outfit(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w800,
-                              color: AppTheme.textPrimary)),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Expanded(child: _durationTile(
-                            label: 'Half Day',
-                            hours: 9,
-                            type: 'HALF_DAY',
-                          )),
-                          const SizedBox(width: 12),
-                          Expanded(child: _durationTile(
-                            label: 'Full Day',
-                            hours: 16,
-                            type: 'FULL_DAY',
-                          )),
-                        ],
-                      ),
-                      const SizedBox(height: 24),
 
                       // Month picker
                       Text('Select Month',
@@ -245,8 +207,7 @@ class _MonthBookingScreenState extends State<MonthBookingScreen> {
                       _card(
                         child: Column(
                           children: [
-                            _priceRow('Duration', '$_durationHours hrs/day'),
-                            _priceRow('Working days', '$days days (Mon–Sat)'),
+                            _priceRow('Working days', '$days days'),
                             _priceRow('Daily rate', '₹${daily.toInt()}'),
                             const Divider(height: 24),
                             Row(
@@ -377,7 +338,7 @@ class _MonthBookingScreenState extends State<MonthBookingScreen> {
                                                   fontSize: 17,
                                                   fontWeight: FontWeight.w800,
                                                   color: Colors.white)),
-                                          Text('₹${total.toInt()} · $days days · $_durationHours hrs/day',
+                                          Text('₹${total.toInt()} · $days days',
                                               style: GoogleFonts.inter(
                                                   fontSize: 12,
                                                   color: Colors.white.withValues(alpha: 0.8))),
@@ -417,60 +378,6 @@ class _MonthBookingScreenState extends State<MonthBookingScreen> {
         ],
       ),
       child: child,
-    );
-  }
-
-  Widget _durationTile({
-    required String label,
-    required int hours,
-    required String type,
-  }) {
-    final selected = _durationType == type;
-    return GestureDetector(
-      onTap: () => setState(() => _durationType = type),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        decoration: BoxDecoration(
-          gradient: selected ? AppTheme.primaryGradient : null,
-          color: selected ? null : Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: selected ? Colors.transparent : AppTheme.primary.withValues(alpha: 0.08),
-            width: 1.5,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: selected
-                  ? AppTheme.primary.withValues(alpha: 0.18)
-                  : Colors.black.withValues(alpha: 0.03),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          children: [
-            Icon(
-              type == 'HALF_DAY' ? Icons.wb_sunny_outlined : Icons.wb_sunny_rounded,
-              color: selected ? Colors.white : AppTheme.primary,
-              size: 26,
-            ),
-            const SizedBox(height: 8),
-            Text(label,
-                style: GoogleFonts.outfit(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w800,
-                    color: selected ? Colors.white : AppTheme.textPrimary)),
-            Text('$hours hrs/day',
-                style: GoogleFonts.inter(
-                    fontSize: 12,
-                    color: selected
-                        ? Colors.white.withValues(alpha: 0.8)
-                        : AppTheme.textMuted)),
-          ],
-        ),
-      ),
     );
   }
 

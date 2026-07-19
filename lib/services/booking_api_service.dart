@@ -88,18 +88,16 @@ class BookingApiService {
     return Booking.fromJson(data);
   }
 
-  /// Create a month-long booking contract (HALF_DAY or FULL_DAY)
+  /// Create a month-long booking contract
   Future<Map<String, dynamic>> createMonthBooking({
     required String providerId,
     required String serviceId,
-    required String durationType,
     required String monthStartDate,
     Map<String, dynamic>? customerLocation,
   }) async {
     final response = await ApiClient.post(ApiConfig.monthBooking, {
       'providerId': providerId,
       'serviceId': serviceId,
-      'durationType': durationType,
       'monthStartDate': monthStartDate,
       if (customerLocation != null) 'customerLocation': customerLocation,
     });
